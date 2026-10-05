@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Ukuran & Spesifikasi Videotron</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- html2pdf for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#0f4c81',
+                            900: '#0c2a4d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white !important; color: black !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- Header Navbar -->
+    <header class="bg-brand-900 text-white shadow-lg sticky top-0 z-50 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-brand-500 p-2 rounded-lg text-white shadow-md">
+                    <i class="fa-solid me-0.5 fa-tv text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight leading-tight">Kalkulator Videotron Pro</h1>
+                    <p class="text-xs text-brand-100">Estimasi Ukuran, Daya, Resolusi & Controller LED Display</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="copySummaryText()" class="hidden sm:inline-flex items-center space-x-1.5 bg-brand-700 hover:bg-brand-600 px-3 py-1.5 rounded-lg text-xs font-medium transition shadow-sm">
+                    <i class="fa-regular fa-copy"></i>
+                    <span>Salin Ringkasan</span>
+                </button>
+                <button onclick="exportToPDF()" class="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 rounded-lg text-xs font-medium transition shadow-sm">
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <span>Cetak / PDF</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Panel: Inputs & Controls -->
+        <section class="lg:col-span-5 space-y-6 no-print">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 space-y-5">
+                
+                <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
+                    <h2 class="text-base font-semibold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-brand-500"></i>
+                        Parameter Layar
+                    </h2>
+                    <span class="text-xs text-slate-400">Pilih Preset & Ukuran</span>
+                </div>
+
+                <!-- 1. Preset Dropdown -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Pilih Modul / Cabinet LED
+                    </label>
+                    <select id="presetSelect" onchange="onPresetChange()" class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 p-2.5 transition">
+                        <option value="p125">Indoor P1.25 (320x160mm, 256x128px)</option>
+                        <option value="p153">Indoor P1.53 (320x160mm, 208x104px)</option>
+                        <option value="p186">Indoor P1.86 (320x160mm, 172x86px)</option>
+                        <option value="p20" selected>Indoor P2.0 (320x160mm, 160x80px)</option>
+                        <option value="p25">Indoor P2.5 (320x160mm, 128x64px)</option>
+                        <option value="p391_cab">Outdoor P3.91 Cabinet (500x500mm, 128x128px)</option>
+                        <option value="p4">Outdoor P4 (320x160mm, 80x40px)</option>
+                        <option value="p5">Outdoor P5 (320x160mm, 64x32px)</option>
+                        <option value="p8">Outdoor P8 (320x160mm, 40x20px)</option>
+                        <option value="custom">-- Custom Modul --</option>
+                    </select>
+                </div>
+
+                <!-- Custom Module Fields (Hidden unless 'custom' chosen) -->
+                <div id="customModuleFields" class="hidden grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <div>
+                        <label class="block text-xs text-slate-600 mb-1">Lebar Modul (mm)</label>
+                        <input type="number" id="customModW" value="320" oninput="calculate()" class="w-full border p-2 text-sm rounded focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-600 mb-1">Tinggi Modul (mm)</label>
+                        <input type="number" id="customModH" value="160" oninput="calculate()" class="w-full border p-2 text-sm rounded focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-600 mb-1">Px Lebar (Piksel)</label>
+                        <input type="number" id="customPxW" value="160" oninput="calculate()" class="w-full border p-2 text-sm rounded focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-600 mb-1">Px Tinggi (Piksel)</label>
+                        <input type="number" id="customPxH" value="80" oninput="calculate()" class="w-full border p-2 text-sm rounded focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-600 mb-1">Pixel Pitch (mm)</label>
+                        <input type="number" step="0.01" id="customPitch" value="2.0" oninput="calculate()" class="w-full border p-2 text-sm rounded focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-600 mb-1">Max Power (W/m²)</label>
+                        <input type="number" id="customMaxPower" value="600" oninput="calculate()" class="w-full border p-2 text-sm rounded focus:ring-brand-500">
+                    </div>
+                </div>
+
+                <!-- 2. Mode Input Tab Selector -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                        Metode Penentuan Ukuran
+                    </label>
+                    <div class="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-lg">
+                        <button type="button" id="tabTarget" onclick="switchInputMode('target')" class="py-2 px-3 text-xs font-semibold rounded-md transition shadow-sm bg-white text-brand-600">
+                            Target Ukuran (Meter/cm)
+                        </button>
+                        <button type="button" id="tabGrid" onclick="switchInputMode('grid')" class="py-2 px-3 text-xs font-semibold rounded-md transition text-slate-600 hover:text-slate-800">
+                            Susunan Modul (Kolom x Baris)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Input Fields: Target Dimension Mode -->
+                <div id="modeTargetSection" class="space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Target Lebar Layar</label>
+                            <div class="flex">
+                                <input type="number" step="0.01" id="targetWidth" value="3.2" oninput="calculate()" class="w-full border border-slate-300 rounded-l-lg p-2 text-sm focus:ring-brand-500 focus:border-brand-500">
+                                <select id="unitWidth" onchange="calculate()" class="bg-slate-100 border border-l-0 border-slate-300 rounded-r-lg text-xs px-2 text-slate-600">
+                                    <option value="m">meter</option>
+                                    <option value="cm">cm</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Target Tinggi Layar</label>
+                            <div class="flex">
+                                <input type="number" step="0.01" id="targetHeight" value="1.92" oninput="calculate()" class="w-full border border-slate-300 rounded-l-lg p-2 text-sm focus:ring-brand-500 focus:border-brand-500">
+                                <select id="unitHeight" onchange="calculate()" class="bg-slate-100 border border-l-0 border-slate-300 rounded-r-lg text-xs px-2 text-slate-600">
+                                    <option value="m">meter</option>
+                                    <option value="cm">cm</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-slate-500 italic">
+                        *Sistem akan menghitung kelipatan modul terdekat yang mendekati atau melebihi target.
+                    </p>
+                </div>
+
+                <!-- Input Fields: Grid Count Mode -->
+                <div id="modeGridSection" class="hidden space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Jumlah Kolom (Horizontal)</label>
+                            <div class="relative">
+                                <input type="number" min="1" id="gridCols" value="10" oninput="calculate()" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-brand-500">
+                                <span class="absolute right-2.5 top-2 text-xs text-slate-400">Modul</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Jumlah Baris (Vertikal)</label>
+                            <div class="relative">
+                                <input type="number" min="1" id="gridRows" value="12" oninput="calculate()" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-brand-500">
+                                <span class="absolute right-2.5 top-2 text-xs text-slate-400">Modul</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Electrical Voltage Config -->
+                <div class="border-t border-slate-100 pt-3">
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                        Konfigurasi Daya Listrik
+                    </label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-slate-600 mb-1">Sistem Fasa Listrik</label>
+                            <select id="phaseType" onchange="calculate()" class="w-full border border-slate-300 rounded-lg p-2 text-xs bg-slate-50">
+                                <option value="1">1-Phase (220V)</option>
+                                <option value="3">3-Phase (380V)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-600 mb-1">Power Factor (Cos φ)</label>
+                            <input type="number" id="powerFactor" value="0.9" step="0.05" min="0.5" max="1" oninput="calculate()" class="w-full border border-slate-300 rounded-lg p-2 text-xs bg-slate-50">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Toast / Action Box -->
+            <div id="toast" class="hidden bg-slate-800 text-white text-xs p-3 rounded-lg shadow-lg flex items-center justify-between">
+                <span id="toastMsg">Pesan Toast</span>
+                <i class="fa-solid fa-xmark cursor-pointer" onclick="document.getElementById('toast').classList.add('hidden')"></i>
+            </div>
+        </section>
+
+        <!-- Right Panel: Results & Visual Simulator -->
+        <section class="lg:col-span-7 space-y-6" id="exportableArea">
+            
+            <!-- PDF Printable Header (Only visible on PDF/Print) -->
+            <div class="hidden print-only mb-6 border-b-2 border-slate-800 pb-4">
+                <h1 class="text-2xl font-bold">Laporan Kalkulasi Spesifikasi Videotron</h1>
+                <p class="text-xs text-slate-600">Dibuat otomatis via Kalkulator Videotron Pro | Date: <span id="printDate"></span></p>
+            </div>
+
+            <!-- Key Summary Cards Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <span class="text-xs text-slate-500 font-medium">Ukuran Fisik Akhir</span>
+                    <div class="mt-2">
+                        <p class="text-base font-bold text-slate-800" id="resDimMeter">3.20 x 1.92 m</p>
+                        <p class="text-[11px] text-brand-600 font-semibold" id="resLuas">6.14 m²</p>
+                    </div>
+                </div>
+                <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <span class="text-xs text-slate-500 font-medium">Total Modul</span>
+                    <div class="mt-2">
+                        <p class="text-base font-bold text-slate-800" id="resTotalModules">120 Modul</p>
+                        <p class="text-[11px] text-slate-500" id="resGridFormat">10 Kolom x 12 Baris</p>
+                    </div>
+                </div>
+                <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <span class="text-xs text-slate-500 font-medium">Resolusi Layar</span>
+                    <div class="mt-2">
+                        <p class="text-base font-bold text-slate-800" id="resPixels">1600 x 960 px</p>
+                        <p class="text-[11px] text-purple-600 font-semibold" id="resMegaPixels">1.54 Megapixels</p>
+                    </div>
+                </div>
+                <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <span class="text-xs text-slate-500 font-medium">Aspect Ratio</span>
+                    <div class="mt-2">
+                        <p class="text-base font-bold text-slate-800" id="resAspectRatio">16 : 9.6</p>
+                        <p class="text-[11px] text-slate-500" id="resRatioMatch">Mendekati 16:9</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Specifications Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                <!-- Electrical Power Card -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
+                    <div class="flex items-center space-x-2 text-amber-600 border-b border-slate-100 pb-2">
+                        <i class="fa-solid fa-bolt text-lg"></i>
+                        <h3 class="font-bold text-sm text-slate-800">Estimasi Daya Listrik</h3>
+                    </div>
+                    <div class="space-y-2 text-xs">
+                        <div class="flex justify-between py-1 border-b border-slate-50">
+                            <span class="text-slate-600">Konsumsi Maksimal (Max Power):</span>
+                            <span class="font-bold text-slate-800" id="resPowerMax">3,686 Watt (3.69 kW)</span>
+                        </div>
+                        <div class="flex justify-between py-1 border-b border-slate-50">
+                            <span class="text-slate-600">Konsumsi Rata-Rata (~40%):</span>
+                            <span class="font-semibold text-emerald-600" id="resPowerAvg">1,475 Watt (1.48 kW)</span>
+                        </div>
+                        <div class="flex justify-between py-1 border-b border-slate-50">
+                            <span class="text-slate-600">Estimasi Arus Listrik Peak:</span>
+                            <span class="font-bold text-rose-600" id="resAmpere">18.6 Ampere (@ 220V)</span>
+                        </div>
+                        <div class="flex justify-between py-1">
+                            <span class="text-slate-600">Rekomendasi Kapasitas MCB:</span>
+                            <span class="font-semibold text-slate-800" id="resMCB">Min. MCB 25 Ampere</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hardware & Viewing Card -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
+                    <div class="flex items-center space-x-2 text-brand-500 border-b border-slate-100 pb-2">
+                        <i class="fa-solid fa-microchip text-lg"></i>
+                        <h3 class="font-bold text-sm text-slate-800">Controller & Jarak Pandang</h3>
+                    </div>
+                    <div class="space-y-2 text-xs">
+                        <div class="flex justify-between py-1 border-b border-slate-50">
+                            <span class="text-slate-600">Kebutuhan Port Controller LAN:</span>
+                            <span class="font-bold text-brand-600" id="resControllerPorts">3 Port (Kapasitas ~650k px/port)</span>
+                        </div>
+                        <div class="flex justify-between py-1 border-b border-slate-50">
+                            <span class="text-slate-600">Sistem Controller Disarankan:</span>
+                            <span class="font-semibold text-slate-800">NovaStar / Huidu / Colorlight</span>
+                        </div>
+                        <div class="flex justify-between py-1 border-b border-slate-50">
+                            <span class="text-slate-600">Jarak Pandang Minimum (Pixel Pitch):</span>
+                            <span class="font-bold text-slate-800" id="resDistMin">2.0 Meter</span>
+                        </div>
+                        <div class="flex justify-between py-1">
+                            <span class="text-slate-600">Jarak Pandang Nyaman/Optimal:</span>
+                            <span class="font-bold text-emerald-600" id="resDistOptimal">4.0 - 6.0 Meter</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Visual Grid Simulator Container -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <div class="flex items-center space-x-2 text-indigo-600">
+                        <i class="fa-solid fa-border-all text-lg"></i>
+                        <h3 class="font-bold text-sm text-slate-800">Simulasi Layout Grid Modul</h3>
+                    </div>
+                    <span class="text-[11px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-medium" id="resGridRatioBadge">10 Kolom × 12 Baris</span>
+                </div>
+
+                <!-- Screen Canvas / Frame Mockup -->
+                <div class="bg-slate-900 p-4 rounded-xl flex flex-col items-center justify-center min-h-[220px] overflow-hidden relative">
+                    <!-- LED Screen Simulation Grid -->
+                    <div id="gridPreview" class="border-2 border-slate-600 bg-slate-950 p-1 grid gap-1 max-w-full max-h-[300px] overflow-auto custom-scrollbar shadow-2xl transition-all duration-300">
+                        <!-- Grid cells injected via JS -->
+                    </div>
+
+                    <!-- Dimension Indicator labels overlay -->
+                    <div class="mt-3 flex items-center justify-center space-x-4 text-xs text-slate-300 font-mono">
+                        <span><i class="fa-solid fa-arrows-left-right me-1 text-brand-400"></i><span id="visualWidthTxt">3.20m</span></span>
+                        <span>×</span>
+                        <span><i class="fa-solid fa-arrows-up-down me-1 text-brand-400"></i><span id="visualHeightTxt">1.92m</span></span>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 mt-auto no-print">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
+            <p>Kalkulator Ukuran & Spesifikasi Videotron LED Display &copy; 2026. Semua kalkulasi adalah estimasi teknis standar industri.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Preset Database
+        const PRESETS = {
+            'p125': { pitch: 1.25, modW: 320, modH: 160, pxW: 256, pxH: 128, maxPower: 600, name: 'Indoor P1.25' },
+            'p153': { pitch: 1.53, modW: 320, modH: 160, pxW: 208, pxH: 104, maxPower: 600, name: 'Indoor P1.53' },
+            'p186': { pitch: 1.86, modW: 320, modH: 160, pxW: 172, pxH: 86,  maxPower: 600, name: 'Indoor P1.86' },
+            'p20':  { pitch: 2.00, modW: 320, modH: 160, pxW: 160, pxH: 80,  maxPower: 600, name: 'Indoor P2.0' },
+            'p25':  { pitch: 2.50, modW: 320, modH: 160, pxW: 128, pxH: 64,  maxPower: 600, name: 'Indoor P2.5' },
+            'p391_cab': { pitch: 3.91, modW: 500, modH: 500, pxW: 128, pxH: 128, maxPower: 800, name: 'Outdoor P3.91 Cabinet' },
+            'p4':   { pitch: 4.00, modW: 320, modH: 160, pxW: 80,  pxH: 40,  maxPower: 800, name: 'Outdoor P4' },
+            'p5':   { pitch: 5.00, modW: 320, modH: 160, pxW: 64,  pxH: 32,  maxPower: 800, name: 'Outdoor P5' },
+            'p8':   { pitch: 8.00, modW: 320, modH: 160, pxW: 40,  pxH: 20,  maxPower: 800, name: 'Outdoor P8' }
+        };
+
+        let currentInputMode = 'target'; // 'target' or 'grid'
+
+        // Handle Preset selection change
+        function onPresetChange() {
+            const val = document.getElementById('presetSelect').value;
+            const customDiv = document.getElementById('customModuleFields');
+            
+            if (val === 'custom') {
+                customDiv.classList.remove('hidden');
+            } else {
+                customDiv.classList.add('hidden');
+            }
+            calculate();
+        }
+
+        // Switch between Target Dimension Mode & Grid Count Mode
+        function switchInputMode(mode) {
+            currentInputMode = mode;
+            const tabTarget = document.getElementById('tabTarget');
+            const tabGrid = document.getElementById('tabGrid');
+            const secTarget = document.getElementById('modeTargetSection');
+            const secGrid = document.getElementById('modeGridSection');
+
+            if (mode === 'target') {
+                tabTarget.className = "py-2 px-3 text-xs font-semibold rounded-md transition shadow-sm bg-white text-brand-600";
+                tabGrid.className = "py-2 px-3 text-xs font-semibold rounded-md transition text-slate-600 hover:text-slate-800";
+                secTarget.classList.remove('hidden');
+                secGrid.classList.add('hidden');
+            } else {
+                tabGrid.className = "py-2 px-3 text-xs font-semibold rounded-md transition shadow-sm bg-white text-brand-600";
+                tabTarget.className = "py-2 px-3 text-xs font-semibold rounded-md transition text-slate-600 hover:text-slate-800";
+                secGrid.classList.remove('hidden');
+                secTarget.classList.add('hidden');
+            }
+            calculate();
+        }
+
+        // Helper: Greatest Common Divisor for Aspect Ratio
+        function gcd(a, b) {
+            return b == 0 ? a : gcd(b, a % b);
+        }
+
+        // Main Calculation Logic Engine
+        function calculate() {
+            // 1. Fetch Selected Module Properties
+            const presetVal = document.getElementById('presetSelect').value;
+            let modW, modH, pxW, pxH, pitch, maxPowerDensity;
+
+            if (presetVal === 'custom') {
+                modW = parseFloat(document.getElementById('customModW').value) || 320;
+                modH = parseFloat(document.getElementById('customModH').value) || 160;
+                pxW = parseInt(document.getElementById('customPxW').value) || 160;
+                pxH = parseInt(document.getElementById('customPxH').value) || 80;
+                pitch = parseFloat(document.getElementById('customPitch').value) || 2.0;
+                maxPowerDensity = parseFloat(document.getElementById('customMaxPower').value) || 600;
+            } else {
+                const spec = PRESETS[presetVal];
+                modW = spec.modW;
+                modH = spec.modH;
+                pxW = spec.pxW;
+                pxH = spec.pxH;
+                pitch = spec.pitch;
+                maxPowerDensity = spec.maxPower;
+            }
+
+            // 2. Determine Columns and Rows based on input mode
+            let cols = 1;
+            let rows = 1;
+
+            if (currentInputMode === 'target') {
+                let targetW = parseFloat(document.getElementById('targetWidth').value) || 0;
+                let targetH = parseFloat(document.getElementById('targetHeight').value) || 0;
+                
+                if (document.getElementById('unitWidth').value === 'cm') targetW /= 100;
+                if (document.getElementById('unitHeight').value === 'cm') targetH /= 100;
+
+                // Convert target meters to mm
+                const targetW_mm = targetW * 1000;
+                const targetH_mm = targetH * 1000;
+
+                cols = Math.max(1, Math.round(targetW_mm / modW));
+                rows = Math.max(1, Math.round(targetH_mm / modH));
+            } else {
+                cols = Math.max(1, parseInt(document.getElementById('gridCols').value) || 1);
+                rows = Math.max(1, parseInt(document.getElementById('gridRows').value) || 1);
+            }
+
+            // 3. Compute Physical Screen Dimensions
+            const totalWidthMeters = (cols * modW) / 1000;
+            const totalHeightMeters = (rows * modH) / 1000;
+            const totalAreaSqm = totalWidthMeters * totalHeightMeters;
+            const totalModules = cols * rows;
+
+            // 4. Compute Screen Resolutions
+            const totalPxW = cols * pxW;
+            const totalPxH = rows * pxH;
+            const totalPixels = totalPxW * totalPxH;
+            const megapixels = (totalPixels / 1000000).toFixed(2);
+
+            // 5. Compute Aspect Ratio
+            const divisor = gcd(totalPxW, totalPxH);
+            const ratioW = (totalPxW / divisor).toFixed(1).replace('.0', '');
+            const ratioH = (totalPxH / divisor).toFixed(1).replace('.0', '');
+            const decimalRatio = totalPxW / totalPxH;
+            
+            let ratioLabel = `${ratioW}:${ratioH}`;
+            let matchLabel = "Custom Ratio";
+            if (Math.abs(decimalRatio - 1.777) < 0.08) matchLabel = "Standard 16:9 HD";
+            else if (Math.abs(decimalRatio - 1.333) < 0.08) matchLabel = "Standard 4:3 SD";
+            else if (Math.abs(decimalRatio - 1.0) < 0.05) matchLabel = "Square 1:1";
+
+            // 6. Compute Electrical Power
+            const phase = parseInt(document.getElementById('phaseType').value) || 1;
+            const pf = parseFloat(document.getElementById('powerFactor').value) || 0.9;
+            
+            const totalMaxPowerWatt = totalAreaSqm * maxPowerDensity;
+            const totalAvgPowerWatt = totalMaxPowerWatt * 0.4; // Avg ~40%
+
+            let ampere = 0;
+            if (phase === 1) {
+                ampere = totalMaxPowerWatt / (220 * pf);
+            } else {
+                ampere = totalMaxPowerWatt / (Math.sqrt(3) * 380 * pf);
+            }
+
+            const recommendedMCB = Math.ceil(ampere * 1.25); // 25% safety margin
+
+            // 7. Controller Port Calculations (Standard Controller capacity ~650,000 px / LAN Port)
+            const portCapacity = 650000;
+            const requiredPorts = Math.ceil(totalPixels / portCapacity);
+
+            // 8. Viewing Distances
+            const minDistance = pitch.toFixed(1);
+            const optDistMin = (pitch * 1.5).toFixed(1);
+            const optDistMax = (pitch * 2.5).toFixed(1);
+
+            // 9. Update UI Text
+            document.getElementById('resDimMeter').innerText = `${totalWidthMeters.toFixed(2)} x ${totalHeightMeters.toFixed(2)} m`;
+            document.getElementById('resLuas').innerText = `${totalAreaSqm.toFixed(2)} m² Total Area`;
+            document.getElementById('resTotalModules').innerText = `${totalModules} Modul`;
+            document.getElementById('resGridFormat').innerText = `${cols} Kolom × ${rows} Baris`;
+            
+            document.getElementById('resPixels').innerText = `${totalPxW.toLocaleString('id-ID')} × ${totalPxH.toLocaleString('id-ID')} px`;
+            document.getElementById('resMegaPixels').innerText = `${megapixels} Megapixels`;
+            document.getElementById('resAspectRatio').innerText = ratioLabel;
+            document.getElementById('resRatioMatch').innerText = matchLabel;
+
+            document.getElementById('resPowerMax').innerText = `${Math.round(totalMaxPowerWatt).toLocaleString('id-ID')} W (${(totalMaxPowerWatt/1000).toFixed(2)} kW)`;
+            document.getElementById('resPowerAvg').innerText = `${Math.round(totalAvgPowerWatt).toLocaleString('id-ID')} W (${(totalAvgPowerWatt/1000).toFixed(2)} kW)`;
+            document.getElementById('resAmpere').innerText = `${ampere.toFixed(1)} Ampere (@ ${phase === 1 ? '220V 1-Phase' : '380V 3-Phase'})`;
+            document.getElementById('resMCB').innerText = `Rekomendasi MCB: ≥ ${recommendedMCB} Ampere`;
+
+            document.getElementById('resControllerPorts').innerText = `${requiredPorts} Port LAN Controller`;
+            document.getElementById('resDistMin').innerText = `${minDistance} Meter`;
+            document.getElementById('resDistOptimal').innerText = `${optDistMin} - ${optDistMax} Meter`;
+
+            document.getElementById('visualWidthTxt').innerText = `${totalWidthMeters.toFixed(2)}m`;
+            document.getElementById('visualHeightTxt').innerText = `${totalHeightMeters.toFixed(2)}m`;
+            document.getElementById('resGridRatioBadge').innerText = `${cols} Kolom × ${rows} Baris`;
+
+            // 10. Update Visual Grid Preview
+            renderVisualGrid(cols, rows);
+        }
+
+        // Render Grid Simulation Cells
+        function renderVisualGrid(cols, rows) {
+            const container = document.getElementById('gridPreview');
+            container.innerHTML = '';
+            
+            // Set CSS Grid Template Columns dynamically
+            container.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+
+            // Limit preview cells rendering for performance if grid is huge
+            const maxCells = 400;
+            const total = cols * rows;
+            const isOverflow = total > maxCells;
+
+            const renderCount = isOverflow ? maxCells : total;
+
+            for (let i = 0; i < renderCount; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'bg-brand-600/80 border border-brand-400/30 rounded-[2px] h-3 w-3 sm:h-4 sm:w-4 transition hover:bg-emerald-400';
+                container.appendChild(cell);
+            }
+
+            if (isOverflow) {
+                const warning = document.createElement('div');
+                warning.className = 'col-span-full text-[10px] text-amber-400 text-center mt-1';
+                warning.innerText = `*Visual disederhanakan (Total ${total} modul)`;
+                container.appendChild(warning);
+            }
+        }
+
+        // Copy Text Summary to Clipboard
+        function copySummaryText() {
+            const dim = document.getElementById('resDimMeter').innerText;
+            const luas = document.getElementById('resLuas').innerText;
+            const modul = document.getElementById('resTotalModules').innerText;
+            const grid = document.getElementById('resGridFormat').innerText;
+            const res = document.getElementById('resPixels').innerText;
+            const pwrMax = document.getElementById('resPowerMax').innerText;
+            const amp = document.getElementById('resAmpere').innerText;
+            const ports = document.getElementById('resControllerPorts').innerText;
+
+            const text = `=== SPESIFIKASI KEBUTUHAN VIDEOTRON ===\n` +
+                         ` Ukuran Layar: ${dim} (${luas})\n` +
+                         ` Jumlah Modul: ${modul} (${grid})\n` +
+                         ` Total Resolusi: ${res}\n` +
+                         ` Daya Maksimal: ${pwrMax}\n` +
+                         ` Arus Listrik: ${amp}\n` +
+                         ` Controller: ${ports}\n` +
+                         `=======================================`;
+
+            // ExecCommand Fallback for iframe/browser safety
+            const dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = text;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+
+            showToast("Ringkasan spesifikasi berhasil disalin!");
+        }
+
+        // Show Toast Notification
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Export PDF
+        function exportToPDF() {
+            document.getElementById('printDate').innerText = new Date().toLocaleDateString('id-ID');
+            const element = document.getElementById('exportableArea');
+            
+            showToast("Menyiapkan dokumen PDF...");
+
+            const opt = {
+                margin:       0.5,
+                filename:     `Spesifikasi_Videotron_${new Date().toISOString().slice(0,10)}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save();
+        }
+
+        // Initial trigger on load
+        window.onload = function() {
+            calculate();
+        };
+    </script>
+</body>
+</html>
