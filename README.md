@@ -8,7 +8,8 @@ Kalkulator spesifikasi LED display berbasis satu halaman HTML. Buka `index.html`
 - Input target meter/cm atau susunan kolom × baris.
 - Pembulatan **Kelipatan terdekat** (default), **Minimal memenuhi target**, atau **Maksimal sesuai ruang**.
 - Ukuran akhir, selisih terhadap target dalam mm, luas, jumlah unit, resolusi, rasio, daya dan estimasi port.
-- Salin ringkasan dan ekspor PDF; keduanya diblokir ketika input tidak valid.
+- Salin ringkasan dan ekspor PDF A4 satu halaman dengan layout tetap pada HP/desktop; keduanya diblokir ketika input tidak valid.
+- Preview grid proporsional: modul 320 × 160 mm tampil persegi panjang; cabinet 500 × 500 mm tetap persegi.
 
 ### Aturan ukuran dan validasi
 
@@ -30,7 +31,7 @@ Mode terdekat/minimal menghasilkan sedikitnya satu unit per sumbu. Mode maksimal
 - Tegangan: 220 V satu fasa atau 380 V tiga fasa dengan asumsi beban seimbang.
 - Angka MCB masih berasal dari arus × 1,25 yang dibulatkan ke atas; belum memilih perangkat/proteksi berdasarkan kabel, arus awal PSU, dan kondisi instalasi.
 - Port masih menggunakan 650.000 piksel/port, belum memverifikasi batas model controller dan mapping.
-- Cabinet dan modul belum dibedakan pada semua label; preview grid belum mengikuti proporsi fisik modul.
+- Cabinet dan modul belum dibedakan pada semua label. Grid mengikuti proporsi fisik unit dan menampilkan semua baris/kolom sebagai gambar statis.
 - RAB, penyimpanan proyek dan agregasi beberapa layar belum tersedia.
 
 ## Pengujian
