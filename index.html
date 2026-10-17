@@ -49,6 +49,8 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        input[aria-invalid="true"] { border-color: #e11d48; }
         @media print {
             .no-print { display: none !important; }
             .print-only { display: block !important; }
@@ -71,11 +73,11 @@
                 </div>
             </div>
             <div class="flex items-center space-x-2">
-                <button onclick="copySummaryText()" class="hidden sm:inline-flex items-center space-x-1.5 bg-brand-700 hover:bg-brand-600 px-3 py-1.5 rounded-lg text-xs font-medium transition shadow-sm">
+                <button id="copyButton" onclick="copySummaryText()" class="hidden sm:inline-flex items-center space-x-1.5 bg-brand-700 hover:bg-brand-600 px-3 py-1.5 rounded-lg text-xs font-medium transition shadow-sm">
                     <i class="fa-regular fa-copy"></i>
                     <span>Salin Ringkasan</span>
                 </button>
-                <button onclick="exportToPDF()" class="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 rounded-lg text-xs font-medium transition shadow-sm">
+                <button id="pdfButton" onclick="exportToPDF()" class="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 rounded-lg text-xs font-medium transition shadow-sm">
                     <i class="fa-solid fa-file-pdf"></i>
                     <span>Cetak / PDF</span>
                 </button>
@@ -100,7 +102,7 @@
 
                 <!-- 1. Preset Dropdown -->
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                    <label for="presetSelect" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                         Pilih Modul / Cabinet LED
                     </label>
                     <select id="presetSelect" onchange="onPresetChange()" class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 p-2.5 transition">
@@ -120,27 +122,27 @@
                 <!-- Custom Module Fields (Hidden unless 'custom' chosen) -->
                 <div id="customModuleFields" class="hidden grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
                     <div>
-                        <label class="block text-xs text-slate-600 mb-1">Lebar Modul (mm)</label>
+                        <label for="customModW" class="block text-xs text-slate-600 mb-1">Lebar Modul (mm)</label>
                         <input type="number" id="customModW" value="320" oninput="calculate()" class="w-full border p-2 text-sm rounded focus:ring-brand-500">
                     </div>
                     <div>
-                        <label class="block text-xs text-slate-600 mb-1">Tinggi Modul (mm)</label>
+                        <label for="customModH" class="block text-xs text-slate-600 mb-1">Tinggi Modul (mm)</label>
                         <input type="number" id="customModH" value="160" oninput="calculate()" class="w-full border p-2 text-sm rounded focus:ring-brand-500">
                     </div>
                     <div>
-                        <label class="block text-xs text-slate-600 mb-1">Px Lebar (Piksel)</label>
+                        <label for="customPxW" class="block text-xs text-slate-600 mb-1">Px Lebar (Piksel)</label>
                         <input type="number" id="customPxW" value="160" oninput="calculate()" class="w-full border p-2 text-sm rounded focus:ring-brand-500">
                     </div>
                     <div>
-                        <label class="block text-xs text-slate-600 mb-1">Px Tinggi (Piksel)</label>
+                        <label for="customPxH" class="block text-xs text-slate-600 mb-1">Px Tinggi (Piksel)</label>
                         <input type="number" id="customPxH" value="80" oninput="calculate()" class="w-full border p-2 text-sm rounded focus:ring-brand-500">
                     </div>
                     <div>
-                        <label class="block text-xs text-slate-600 mb-1">Pixel Pitch (mm)</label>
+                        <label for="customPitch" class="block text-xs text-slate-600 mb-1">Pixel Pitch (mm)</label>
                         <input type="number" step="0.01" id="customPitch" value="2.0" oninput="calculate()" class="w-full border p-2 text-sm rounded focus:ring-brand-500">
                     </div>
                     <div>
-                        <label class="block text-xs text-slate-600 mb-1">Max Power (W/m²)</label>
+                        <label for="customMaxPower" class="block text-xs text-slate-600 mb-1">Max Power (W/m²)</label>
                         <input type="number" id="customMaxPower" value="600" oninput="calculate()" class="w-full border p-2 text-sm rounded focus:ring-brand-500">
                     </div>
                 </div>
@@ -164,7 +166,7 @@
                 <div id="modeTargetSection" class="space-y-3">
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs font-medium text-slate-600 mb-1">Target Lebar Layar</label>
+                            <label for="targetWidth" class="block text-xs font-medium text-slate-600 mb-1">Target Lebar Layar</label>
                             <div class="flex">
                                 <input type="number" step="0.01" id="targetWidth" value="3.2" oninput="calculate()" class="w-full border border-slate-300 rounded-l-lg p-2 text-sm focus:ring-brand-500 focus:border-brand-500">
                                 <select id="unitWidth" onchange="calculate()" class="bg-slate-100 border border-l-0 border-slate-300 rounded-r-lg text-xs px-2 text-slate-600">
@@ -174,7 +176,7 @@
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-600 mb-1">Target Tinggi Layar</label>
+                            <label for="targetHeight" class="block text-xs font-medium text-slate-600 mb-1">Target Tinggi Layar</label>
                             <div class="flex">
                                 <input type="number" step="0.01" id="targetHeight" value="1.92" oninput="calculate()" class="w-full border border-slate-300 rounded-l-lg p-2 text-sm focus:ring-brand-500 focus:border-brand-500">
                                 <select id="unitHeight" onchange="calculate()" class="bg-slate-100 border border-l-0 border-slate-300 rounded-r-lg text-xs px-2 text-slate-600">
@@ -184,23 +186,29 @@
                             </div>
                         </div>
                     </div>
-                    <p class="text-[11px] text-slate-500 italic">
-                        *Sistem akan menghitung kelipatan modul terdekat yang mendekati atau melebihi target.
-                    </p>
+                    <div>
+                        <label for="roundingMode" class="block text-xs font-medium text-slate-600 mb-1">Pembulatan Ukuran</label>
+                        <select id="roundingMode" onchange="calculate()" class="w-full border border-slate-300 rounded-lg p-2 text-sm">
+                            <option value="nearest">Kelipatan terdekat</option>
+                            <option value="ceil">Minimal memenuhi target</option>
+                            <option value="floor">Maksimal sesuai ruang</option>
+                        </select>
+                    </div>
+                    <p class="text-[11px] text-slate-500">Ukuran akhir mengikuti kelipatan modul. Periksa selisih terhadap target pada hasil.</p>
                 </div>
 
                 <!-- Input Fields: Grid Count Mode -->
                 <div id="modeGridSection" class="hidden space-y-3">
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs font-medium text-slate-600 mb-1">Jumlah Kolom (Horizontal)</label>
+                            <label for="gridCols" class="block text-xs font-medium text-slate-600 mb-1">Jumlah Kolom (Horizontal)</label>
                             <div class="relative">
                                 <input type="number" min="1" id="gridCols" value="10" oninput="calculate()" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-brand-500">
                                 <span class="absolute right-2.5 top-2 text-xs text-slate-400">Modul</span>
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-600 mb-1">Jumlah Baris (Vertikal)</label>
+                            <label for="gridRows" class="block text-xs font-medium text-slate-600 mb-1">Jumlah Baris (Vertikal)</label>
                             <div class="relative">
                                 <input type="number" min="1" id="gridRows" value="12" oninput="calculate()" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-brand-500">
                                 <span class="absolute right-2.5 top-2 text-xs text-slate-400">Modul</span>
@@ -216,20 +224,22 @@
                     </label>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs text-slate-600 mb-1">Sistem Fasa Listrik</label>
+                            <label for="phaseType" class="block text-xs text-slate-600 mb-1">Sistem Fasa Listrik</label>
                             <select id="phaseType" onchange="calculate()" class="w-full border border-slate-300 rounded-lg p-2 text-xs bg-slate-50">
                                 <option value="1">1-Phase (220V)</option>
                                 <option value="3">3-Phase (380V)</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs text-slate-600 mb-1">Power Factor (Cos φ)</label>
+                            <label for="powerFactor" class="block text-xs text-slate-600 mb-1">Power Factor (Cos φ)</label>
                             <input type="number" id="powerFactor" value="0.9" step="0.05" min="0.5" max="1" oninput="calculate()" class="w-full border border-slate-300 rounded-lg p-2 text-xs bg-slate-50">
                         </div>
                     </div>
                 </div>
 
             </div>
+
+            <div id="validationErrors" role="alert" class="hidden bg-rose-50 border border-rose-200 text-rose-800 text-sm p-3 rounded-lg" hidden></div>
 
             <!-- Toast / Action Box -->
             <div id="toast" class="hidden bg-slate-800 text-white text-xs p-3 rounded-lg shadow-lg flex items-center justify-between">
@@ -247,6 +257,7 @@
                 <p class="text-xs text-slate-600">Dibuat otomatis via Kalkulator Videotron Pro | Date: <span id="printDate"></span></p>
             </div>
 
+            <p id="sizeDifference" class="text-sm text-slate-600" aria-live="polite"></p>
             <!-- Key Summary Cards Grid -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
@@ -429,50 +440,111 @@
             return b == 0 ? a : gcd(b, a % b);
         }
 
+        const RESULT_IDS = ['resDimMeter', 'resLuas', 'resTotalModules', 'resGridFormat',
+            'resPixels', 'resMegaPixels', 'resAspectRatio', 'resRatioMatch', 'resPowerMax',
+            'resPowerAvg', 'resAmpere', 'resMCB', 'resControllerPorts', 'resDistMin',
+            'resDistOptimal', 'visualWidthTxt', 'visualHeightTxt', 'resGridRatioBadge'];
+
+        function showValidation(errors) {
+            const box = document.getElementById('validationErrors');
+            box.textContent = errors.join(' ');
+            box.hidden = errors.length === 0;
+            box.classList.toggle('hidden', errors.length === 0);
+            const calculationValid = errors.length === 0;
+            ['copyButton', 'pdfButton'].forEach(id => {
+                document.getElementById(id).disabled = !calculationValid;
+            });
+            if (!calculationValid) {
+                RESULT_IDS.forEach(id => document.getElementById(id).innerText = '—');
+                document.getElementById('gridPreview').innerHTML = '';
+                document.getElementById('sizeDifference').innerText = 'Perbaiki input untuk melihat hasil.';
+            }
+        }
+
+        function readPositive(id, label, errors, {integer = false, min = 0, max = Infinity} = {}) {
+            const field = document.getElementById(id);
+            const raw = field.value.trim();
+            const value = raw === '' ? NaN : Number(raw);
+            const valid = Number.isFinite(value) && value > 0 && value >= min && value <= max
+                && (!integer || Number.isSafeInteger(value));
+            field.setAttribute('aria-invalid', String(!valid));
+            if (!valid) {
+                errors.push(`${label}: wajib angka positif${integer ? ' bulat' : ''}${min > 0 ? ` minimal ${min}` : ''}${Number.isFinite(max) ? `, maksimal ${max}` : ''}.`);
+            }
+            return value;
+        }
+
+        function roundModuleCount(value, mode) {
+            // Avoid an extra/missing module from binary floating-point conversion at exact multiples.
+            const nearest = Math.round(value);
+            if (Math.abs(value - nearest) <= Number.EPSILON * 8 * Math.max(1, Math.abs(value))) {
+                value = nearest;
+            }
+            return mode === 'ceil' ? Math.ceil(value) : mode === 'floor' ? Math.floor(value) : Math.round(value);
+        }
+
         // Main Calculation Logic Engine
         function calculate() {
-            // 1. Fetch Selected Module Properties
+            const errors = [];
+            document.querySelectorAll('[aria-invalid]').forEach(field => field.removeAttribute('aria-invalid'));
             const presetVal = document.getElementById('presetSelect').value;
             let modW, modH, pxW, pxH, pitch, maxPowerDensity;
-
             if (presetVal === 'custom') {
-                modW = parseFloat(document.getElementById('customModW').value) || 320;
-                modH = parseFloat(document.getElementById('customModH').value) || 160;
-                pxW = parseInt(document.getElementById('customPxW').value) || 160;
-                pxH = parseInt(document.getElementById('customPxH').value) || 80;
-                pitch = parseFloat(document.getElementById('customPitch').value) || 2.0;
-                maxPowerDensity = parseFloat(document.getElementById('customMaxPower').value) || 600;
-            } else {
+                modW = readPositive('customModW', 'Lebar modul', errors);
+                modH = readPositive('customModH', 'Tinggi modul', errors);
+                pxW = readPositive('customPxW', 'Piksel horizontal', errors, {integer: true});
+                pxH = readPositive('customPxH', 'Piksel vertikal', errors, {integer: true});
+                pitch = readPositive('customPitch', 'Pixel pitch', errors);
+                maxPowerDensity = readPositive('customMaxPower', 'Daya maksimum', errors);
+            } else if (PRESETS[presetVal]) {
                 const spec = PRESETS[presetVal];
-                modW = spec.modW;
-                modH = spec.modH;
-                pxW = spec.pxW;
-                pxH = spec.pxH;
-                pitch = spec.pitch;
+                ({modW, modH, pxW, pxH, pitch} = spec);
                 maxPowerDensity = spec.maxPower;
-            }
-
-            // 2. Determine Columns and Rows based on input mode
-            let cols = 1;
-            let rows = 1;
-
-            if (currentInputMode === 'target') {
-                let targetW = parseFloat(document.getElementById('targetWidth').value) || 0;
-                let targetH = parseFloat(document.getElementById('targetHeight').value) || 0;
-                
-                if (document.getElementById('unitWidth').value === 'cm') targetW /= 100;
-                if (document.getElementById('unitHeight').value === 'cm') targetH /= 100;
-
-                // Convert target meters to mm
-                const targetW_mm = targetW * 1000;
-                const targetH_mm = targetH * 1000;
-
-                cols = Math.max(1, Math.round(targetW_mm / modW));
-                rows = Math.max(1, Math.round(targetH_mm / modH));
             } else {
-                cols = Math.max(1, parseInt(document.getElementById('gridCols').value) || 1);
-                rows = Math.max(1, parseInt(document.getElementById('gridRows').value) || 1);
+                errors.push('Pilih preset LED yang tersedia.');
             }
+            const phase = Number(document.getElementById('phaseType').value);
+            if (![1, 3].includes(phase)) errors.push('Pilih sistem listrik 1 atau 3 fasa.');
+            const pf = readPositive('powerFactor', 'Power factor', errors, {min: 0.5, max: 1});
+            let cols, rows, targetW, targetH;
+            if (currentInputMode === 'target') {
+                targetW = readPositive('targetWidth', 'Target lebar', errors);
+                targetH = readPositive('targetHeight', 'Target tinggi', errors);
+                const unitW = document.getElementById('unitWidth').value;
+                const unitH = document.getElementById('unitHeight').value;
+                if (![unitW, unitH].every(unit => ['m', 'cm'].includes(unit))) errors.push('Satuan ukuran tidak valid.');
+                if (unitW === 'cm') targetW /= 100;
+                if (unitH === 'cm') targetH /= 100;
+                const rounding = document.getElementById('roundingMode').value;
+                if (!['nearest', 'ceil', 'floor'].includes(rounding)) errors.push('Pilih metode pembulatan yang tersedia.');
+                if (!errors.length) {
+                    cols = roundModuleCount(targetW * 1000 / modW, rounding);
+                    rows = roundModuleCount(targetH * 1000 / modH, rounding);
+                    if (rounding === 'floor' && (cols < 1 || rows < 1)) {
+                        errors.push('Ruang tidak cukup untuk satu modul. Ubah ukuran atau pilih modul lain.');
+                    } else {
+                        cols = Math.max(1, cols);
+                        rows = Math.max(1, rows);
+                    }
+                }
+            } else {
+                cols = readPositive('gridCols', 'Jumlah kolom', errors, {integer: true, max: 10000});
+                rows = readPositive('gridRows', 'Jumlah baris', errors, {integer: true, max: 10000});
+            }
+            if (!errors.length && (!Number.isSafeInteger(cols) || !Number.isSafeInteger(rows)
+                || cols > 10000 || rows > 10000 || cols * rows > 1000000)) {
+                errors.push('Batas kalkulator: 10.000 kolom/baris dan 1.000.000 unit per layar.');
+            }
+            if (!errors.length) {
+                const area = (cols * modW / 1000) * (rows * modH / 1000);
+                const watts = area * maxPowerDensity;
+                if (![area, watts, watts / (220 * pf), cols * modW, rows * modH, pitch * 2.5].every(value => Number.isFinite(value) && value > 0)
+                    || ![cols * pxW, rows * pxH, cols * pxW * rows * pxH].every(Number.isSafeInteger)) {
+                    errors.push('Ukuran, resolusi, atau daya melampaui rentang perhitungan yang didukung.');
+                }
+            }
+            showValidation(errors);
+            if (errors.length) return false;
 
             // 3. Compute Physical Screen Dimensions
             const totalWidthMeters = (cols * modW) / 1000;
@@ -499,8 +571,6 @@
             else if (Math.abs(decimalRatio - 1.0) < 0.05) matchLabel = "Square 1:1";
 
             // 6. Compute Electrical Power
-            const phase = parseInt(document.getElementById('phaseType').value) || 1;
-            const pf = parseFloat(document.getElementById('powerFactor').value) || 0.9;
             
             const totalMaxPowerWatt = totalAreaSqm * maxPowerDensity;
             const totalAvgPowerWatt = totalMaxPowerWatt * 0.4; // Avg ~40%
@@ -547,8 +617,21 @@
             document.getElementById('visualHeightTxt').innerText = `${totalHeightMeters.toFixed(2)}m`;
             document.getElementById('resGridRatioBadge').innerText = `${cols} Kolom × ${rows} Baris`;
 
+            const difference = document.getElementById('sizeDifference');
+            if (currentInputMode === 'target') {
+                const describe = delta => {
+                    if (Math.abs(delta) < 0.000001) return 'sesuai target';
+                    const mm = Math.abs(delta).toLocaleString('id-ID', {maximumFractionDigits: 3});
+                    return `${delta > 0 ? 'lebih' : 'kurang'} ${mm} mm`;
+                };
+                const modeLabels = {nearest: 'Kelipatan terdekat', ceil: 'Minimal memenuhi target', floor: 'Maksimal sesuai ruang'};
+                difference.innerText = `${modeLabels[document.getElementById('roundingMode').value]} — Lebar ${describe((totalWidthMeters - targetW) * 1000)}; tinggi ${describe((totalHeightMeters - targetH) * 1000)}.`;
+            } else {
+                difference.innerText = 'Ukuran berdasarkan jumlah kolom × baris.';
+            }
             // 10. Update Visual Grid Preview
             renderVisualGrid(cols, rows);
+            return true;
         }
 
         // Render Grid Simulation Cells
@@ -582,6 +665,7 @@
 
         // Copy Text Summary to Clipboard
         function copySummaryText() {
+            if (!calculate()) return;
             const dim = document.getElementById('resDimMeter').innerText;
             const luas = document.getElementById('resLuas').innerText;
             const modul = document.getElementById('resTotalModules').innerText;
@@ -593,6 +677,7 @@
 
             const text = `=== SPESIFIKASI KEBUTUHAN VIDEOTRON ===\n` +
                          ` Ukuran Layar: ${dim} (${luas})\n` +
+                         ` Penyesuaian Ukuran: ${document.getElementById('sizeDifference').innerText}\n` +
                          ` Jumlah Modul: ${modul} (${grid})\n` +
                          ` Total Resolusi: ${res}\n` +
                          ` Daya Maksimal: ${pwrMax}\n` +
@@ -623,6 +708,7 @@
 
         // Export PDF
         function exportToPDF() {
+            if (!calculate()) return;
             document.getElementById('printDate').innerText = new Date().toLocaleDateString('id-ID');
             const element = document.getElementById('exportableArea');
             
@@ -646,3 +732,4 @@
     </script>
 </body>
 </html>
+
