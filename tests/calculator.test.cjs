@@ -34,6 +34,7 @@ function calculator(overrides = {}, mode = 'target') {
     vm.runInContext(script, context);
     vm.runInContext(`currentInputMode = '${mode}'`, context);
     return {el: element, run: () => vm.runInContext('calculate()', context, {timeout: 1000}),
+        selectMCB: (current, phase) => vm.runInContext(`selectMCBRating(${current}, ${phase})`, context),
         call: name => vm.runInContext(`${name}()`, context, {timeout: 1000})};
 }
 
@@ -154,4 +155,36 @@ test('rectangular modules retain a 2:1 cell ratio in the static grid', () => {
 test('square cabinets retain square cells', () => {
     const c = calculator({presetSelect: 'p391_cab'}); c.run();
     assert.equal(c.el('gridPreview').children[0].getAttribute('data-module-ratio'), '1');
+});
+
+test('default selects a retail 25 A 1P MCB rather than 24 A', () => {
+    const c = calculator(); c.run();
+    assert.equal(c.el('resMCB').innerText, 'MCB 1P 25 A');
+});
+test('P1.53 example selects 40 A instead of non-retail 35 A', () => {
+    const c = calculator({presetSelect: 'p153', targetWidth: 4.8, targetHeight: 1.92}); c.run();
+    assert.equal(c.el('resMCB').innerText, 'MCB 1P 40 A');
+});
+test('three phase selection uses current per phase and a linked 3P rating', () => {
+    const c = calculator({phaseType: 3}); c.run();
+    assert.equal(c.el('resMCB').innerText, 'MCB 3P 10 A');
+    assert.match(c.el('resMCBDetail').innerText, /beban seimbang/);
+});
+test('retail selection preserves exact thresholds and rounds upward between ratings', () => {
+    const c = calculator();
+    for (const phase of [1, 3]) {
+        const ratings = phase === 1 ? [2,4,6,10,16,20,25,32,40,50,63] : [6,10,16,20,25,32,40,50,63];
+        assert.equal(c.selectMCB(0.1, phase), ratings[0]);
+        ratings.forEach((rating, i) => {
+            assert.equal(c.selectMCB(rating, phase), rating);
+            assert.equal(c.selectMCB(rating + 0.01, phase), ratings[i + 1] ?? null);
+        });
+    }
+});
+test('above curated 63 A range requires evaluation instead of clamping to 63 A', () => {
+    const c = calculator({gridCols: 20, gridRows: 20}, 'grid'); c.run();
+    assert.match(c.el('resMCB').innerText, /Evaluasi MCCB/);
+    assert.match(c.el('resMCBDetail').innerText, /Melebihi daftar/);
+    assert.equal(c.selectMCB(80, 1), null);
+    assert.equal(c.selectMCB(80, 3), null);
 });

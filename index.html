@@ -328,9 +328,11 @@
                         </div>
                         <div class="flex justify-between py-1">
                             <span class="text-slate-600">Rekomendasi Kapasitas MCB:</span>
-                            <span class="font-semibold text-slate-800" id="resMCB">Min. MCB 25 Ampere</span>
+                            <span class="font-semibold text-slate-800" id="resMCB">MCB 1P 25 A</span>
                         </div>
                     </div>
+                    <p id="resMCBDetail" class="text-[11px] text-slate-600"></p>
+                    <p class="text-[11px] text-slate-500">Seleksi awal nominal. Sesuaikan dengan kemampuan kabel, kurva trip, kapasitas pemutusan, dan arus awal PSU.</p>
                 </div>
 
                 <!-- Hardware & Viewing Card -->
@@ -456,7 +458,7 @@
 
         const RESULT_IDS = ['resDimMeter', 'resLuas', 'resTotalModules', 'resGridFormat',
             'resPixels', 'resMegaPixels', 'resAspectRatio', 'resRatioMatch', 'resPowerMax',
-            'resPowerAvg', 'resAmpere', 'resMCB', 'resControllerPorts', 'resDistMin',
+            'resPowerAvg', 'resAmpere', 'resMCB', 'resMCBDetail', 'resControllerPorts', 'resDistMin',
             'resDistOptimal', 'visualWidthTxt', 'visualHeightTxt', 'resGridRatioBadge'];
 
         function showValidation(errors) {
@@ -495,6 +497,19 @@
                 value = nearest;
             }
             return mode === 'ceil' ? Math.ceil(value) : mode === 'floor' ? Math.floor(value) : Math.round(value);
+        }
+
+        // Common retail ratings, based on Schneider Electric Indonesia / Easy9 catalogues.
+        // This is a curated selection range, not the maximum rating of all MCB products.
+        const COMMON_MCB_RATINGS = {
+            1: [2, 4, 6, 10, 16, 20, 25, 32, 40, 50, 63],
+            3: [6, 10, 16, 20, 25, 32, 40, 50, 63]
+        };
+
+        function selectMCBRating(requiredCurrent, phase) {
+            if (!Number.isFinite(requiredCurrent) || requiredCurrent <= 0) return null;
+            const ratings = COMMON_MCB_RATINGS[phase];
+            return ratings ? ratings.find(rating => rating >= requiredCurrent) ?? null : null;
         }
 
         // Main Calculation Logic Engine
@@ -596,7 +611,8 @@
                 ampere = totalMaxPowerWatt / (Math.sqrt(3) * 380 * pf);
             }
 
-            const recommendedMCB = Math.ceil(ampere * 1.25); // 25% safety margin
+            const designCurrent = ampere * 1.25;
+            const recommendedMCB = selectMCBRating(designCurrent, phase);
 
             // 7. Controller Port Calculations (Standard Controller capacity ~650,000 px / LAN Port)
             const portCapacity = 650000;
@@ -621,7 +637,13 @@
             document.getElementById('resPowerMax').innerText = `${Math.round(totalMaxPowerWatt).toLocaleString('id-ID')} W (${(totalMaxPowerWatt/1000).toFixed(2)} kW)`;
             document.getElementById('resPowerAvg').innerText = `${Math.round(totalAvgPowerWatt).toLocaleString('id-ID')} W (${(totalAvgPowerWatt/1000).toFixed(2)} kW)`;
             document.getElementById('resAmpere').innerText = `${ampere.toFixed(1)} Ampere (@ ${phase === 1 ? '220V 1-Phase' : '380V 3-Phase'})`;
-            document.getElementById('resMCB').innerText = `Rekomendasi MCB: ≥ ${recommendedMCB} Ampere`;
+            document.getElementById('resMCB').innerText = recommendedMCB === null
+                ? 'Evaluasi MCCB / pembagian beban'
+                : `MCB ${phase === 1 ? '1P' : '3P'} ${recommendedMCB} A`;
+            const designText = `Arus desain ${designCurrent.toLocaleString('id-ID', {maximumFractionDigits: 2})} A (arus × 1,25).`;
+            document.getElementById('resMCBDetail').innerText = recommendedMCB === null
+                ? `${designText} Melebihi daftar MCB umum kalkulator (63 A); tentukan proteksi dan pembagian sirkuit sesuai instalasi.`
+                : `${designText} Dipilih rating umum di atas atau sama dengan kebutuhan${phase === 3 ? ', per fasa dengan beban seimbang' : ''}.`;
 
             document.getElementById('resControllerPorts').innerText = `${requiredPorts} Port LAN Controller`;
             document.getElementById('resDistMin').innerText = `${minDistance} Meter`;
@@ -694,6 +716,8 @@
                          ` Total Resolusi: ${res}\n` +
                          ` Daya Maksimal: ${pwrMax}\n` +
                          ` Arus Listrik: ${amp}\n` +
+                         ` Proteksi: ${document.getElementById('resMCB').innerText}\n` +
+                         ` Dasar Seleksi: ${document.getElementById('resMCBDetail').innerText}\n` +
                          ` Controller: ${ports}\n` +
                          `=======================================`;
 
