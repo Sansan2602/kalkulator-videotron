@@ -94,7 +94,7 @@ const {execFileSync} = require('node:child_process');
                 const info = execFileSync('pdfinfo', [pdfPath], {encoding: 'utf8'});
                 assert.match(info, /Pages:\s+1\b/, 'Export must be exactly one page');
                 assert.match(info, /Page size:.*A4/, 'Export uses A4');
-                execFileSync('pdftoppm', ['-png', '-scale-to', '1200', '-singlefile', pdfPath,
+                execFileSync('pdftoppm', ['-png', '-scale-to', '1800', '-singlefile', pdfPath,
                     path.join(output, `pdf-preview-${viewport.width}`)]);
                 const ocr = execFileSync('tesseract', [path.join(output, `pdf-preview-${viewport.width}.png`), 'stdout'], {encoding: 'utf8'});
                 assert.match(ocr, /Laporan Kalkulasi/i, 'Full PDF title must be visible');
