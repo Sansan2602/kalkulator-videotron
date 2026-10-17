@@ -26,6 +26,7 @@ const {execFileSync} = require('node:child_process');
             try {
                 await page.goto(`http://127.0.0.1:${server.address().port}/`, {waitUntil: 'networkidle', timeout: 60000});
                 assert.equal(await page.locator('#resDimMeter').innerText(), '3.20 x 1.92 m');
+                assert.equal(await page.locator('#resMCB').innerText(), 'MCB 1P 25 A');
                 await page.locator('#gridPreview img').evaluate(image => image.decode());
                 assert.equal(await page.locator('#gridPreview img').getAttribute('data-module-ratio'), '2');
                 const gridBox = await page.locator('#gridPreview img').boundingBox();
@@ -52,6 +53,10 @@ const {execFileSync} = require('node:child_process');
                 await page.locator('#targetHeight').fill('1.92');
                 assert.equal(await page.locator('#resTotalModules').innerText(), '180 Modul');
                 assert.equal(await page.locator('#resPixels').innerText(), '3.120 × 1.248 px');
+                assert.equal(await page.locator('#resMCB').innerText(), 'MCB 1P 40 A');
+                await page.selectOption('#phaseType', '3');
+                assert.equal(await page.locator('#resMCB').innerText(), 'MCB 3P 16 A');
+                await page.selectOption('#phaseType', '1');
                 await page.locator('#tabGrid').click();
                 await page.locator('#gridCols').fill('10.5');
                 assert.equal(await page.locator('#pdfButton').isDisabled(), true);
