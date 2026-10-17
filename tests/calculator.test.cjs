@@ -34,6 +34,8 @@ function calculator(overrides = {}, mode = 'target') {
     vm.runInContext(script, context);
     vm.runInContext(`currentInputMode = '${mode}'`, context);
     return {el: element, run: () => vm.runInContext('calculate()', context, {timeout: 1000}),
+        cable: (...args) => vm.runInContext(`selectCable(${args.join(',')})`, context),
+        drop: (...args) => vm.runInContext(`cableDropPercent(${args.join(',')})`, context),
         selectMCB: (current, phase) => vm.runInContext(`selectMCBRating(${current}, ${phase})`, context),
         call: name => vm.runInContext(`${name}()`, context, {timeout: 1000})};
 }
@@ -188,3 +190,62 @@ test('above curated 63 A range requires evaluation instead of clamping to 63 A',
     assert.equal(c.selectMCB(80, 1), null);
     assert.equal(c.selectMCB(80, 3), null);
 });
+
+test('default cable size coordinates 25 A protection with corrected B2 ampacity', () => {
+    const c = calculator(); c.run();
+    assert.equal(c.el('resFeederCable').innerText, 'NYY Cu 3 × 6 mm²');
+    assert.equal(c.el('resBranchCable').innerText, '1 jalur @ NYY Cu 3 × 6 mm²');
+    assert.match(c.el('resFeederDetail').innerText, /29,58 A/);
+    assert.match(c.el('resCableStatus').innerText, /≤ target 3%/);
+});
+test('split outgoing circuits size each branch, not the complete screen load', () => {
+    const c = calculator({circuitsPerPhase: 3}); c.run();
+    assert.equal(c.el('resFeederCable').innerText, 'NYY Cu 3 × 6 mm²');
+    assert.equal(c.el('resBranchCable').innerText, '3 jalur @ NYY Cu 3 × 2,5 mm²');
+    assert.match(c.el('resBranchDetail').innerText, /MCB 1P 10 A/);
+});
+test('three phase uses five-core feeder and separate three-core outgoing circuits', () => {
+    const c = calculator({phaseType: 3, circuitsPerPhase: 2}); c.run();
+    assert.equal(c.el('resFeederCable').innerText, 'NYY Cu 5 × 2,5 mm²');
+    assert.equal(c.el('resBranchCable').innerText, '6 jalur @ NYY Cu 3 × 2,5 mm²');
+    assert.match(c.el('resFeederDetail').innerText, /R\/S\/T\/N\/PE/);
+});
+test('cable cannot be sized only to the load when the upstream breaker is larger', () => {
+    const c = calculator({sourceProtection: 63}); c.run();
+    assert.equal(c.el('resFeederCable').innerText, 'NYY Cu 3 × 25 mm²');
+    const bad = calculator({sourceProtection: 10}); bad.run();
+    assert.equal(bad.el('resFeederCable').innerText, 'Belum dapat direkomendasikan');
+    assert.match(bad.el('resFeederDetail').innerText, /lebih kecil/);
+});
+test('long feeder upsizes cable for voltage drop', () => {
+    const c = calculator({feederLength: 100}); c.run();
+    // 25 mm² gives 1.503% > feeder budget 1.5%; 35 mm² is required.
+    assert.equal(c.el('resFeederCable').innerText, 'NYY Cu 3 × 35 mm²');
+});
+test('hotter and grouped cables need greater sections for the same breaker', () => {
+    const c = calculator({cableTemperature: 50, feederFactor: 0.7}); c.run();
+    assert.equal(c.el('resFeederCable').innerText, 'NYY Cu 3 × 16 mm²');
+});
+test('outside cable table does not clamp to an inadequate cable', () => {
+    const c = calculator({sourceProtection: 250}); c.run();
+    assert.equal(c.el('resFeederCable').innerText, 'Belum dapat direkomendasikan');
+    assert.match(c.el('resCableStatus').innerText, /Perlu evaluasi/);
+});
+test('hand calculation: 1-phase 20 A, 10 m, 10 mm², PF 1 gives 0.430909% drop', () => {
+    const c = calculator(); assert.ok(Math.abs(c.drop(20,10,10,1,1) - 0.4309090909) < 1e-9);
+});
+test('selection requires corrected ampacity to cover breaker and obeys drop budget', () => {
+    const c = calculator();
+    const cable = c.cable(18,25,20,1,0.9,0.87,1.5);
+    assert.equal(cable.section, 6);
+    assert.ok(cable.capacity >= 25 && cable.drop <= 1.5);
+    assert.equal(c.cable(30,25,20,1,0.9,0.87,1.5), null);
+});
+for (const [id,value] of [['feederLength',''],['branchLength',-1],['circuitsPerPhase',1.5],
+    ['dropLimit',0],['feederFactor',1.1],['branchFactor',0],['cableTemperature',60],['sourceProtection',123]]) {
+    test(`reject invalid cable input ${id}`, () => {
+        const c = calculator({[id]:value}); assert.equal(c.run(), false);
+        assert.equal(c.el('resFeederCable').innerText, '—');
+        assert.equal(c.el('resBranchCable').innerText, '—');
+    });
+}
