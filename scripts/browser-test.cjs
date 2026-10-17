@@ -84,6 +84,9 @@ const {execFileSync} = require('node:child_process');
                 assert.match(info, /Page size:.*A4/, 'Export uses A4');
                 execFileSync('pdftoppm', ['-png', '-scale-to', '1200', '-singlefile', pdfPath,
                     path.join(output, `pdf-preview-${viewport.width}`)]);
+                const ocr = execFileSync('tesseract', [path.join(output, `pdf-preview-${viewport.width}.png`), 'stdout'], {encoding: 'utf8'});
+                assert.match(ocr, /Laporan Kalkulasi/i, 'Full PDF title must be visible');
+                assert.match(ocr, /Ukuran Fisik Akhir/i, 'Left summary card must be visible');
                 await page.waitForFunction(() => !pdfExportInProgress);
                 assert.equal(await page.locator('.pdf-layout').count(), 0, 'Temporary export is cleaned up');
                 await page.locator('#tabGrid').click();

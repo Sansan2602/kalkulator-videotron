@@ -744,6 +744,11 @@
                     jsPDF: {unit: 'mm', format: 'a4', orientation: 'portrait'},
                     pagebreak: {mode: []}
                 }).from(report);
+                // Keep the capture origin stable when html2canvas uses its fixed desktop viewport.
+                const container = await worker.toContainer().get('container');
+                container.style.left = '0';
+                container.style.right = 'auto';
+                container.style.margin = '0';
                 const canvas = await worker.toCanvas().get('canvas');
                 const pdf = await worker.toPdf().get('pdf');
                 // Replace automatic pagination with exactly one fitted image, without cropping.
