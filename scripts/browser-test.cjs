@@ -17,6 +17,7 @@ const {execFileSync} = require('node:child_process');
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     let browser;
     const results = [];
+    let desktopPdfPixels;
     try {
         browser = await chromium.launch({headless: true});
         for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}]) {
@@ -96,6 +97,9 @@ const {execFileSync} = require('node:child_process');
                 assert.match(info, /Page size:.*A4/, 'Export uses A4');
                 execFileSync('pdftoppm', ['-png', '-scale-to', '1800', '-singlefile', pdfPath,
                     path.join(output, `pdf-preview-${viewport.width}`)]);
+                const pixels = execFileSync('pdftoppm', ['-scale-to', '1200', '-singlefile', pdfPath], {maxBuffer: 10 * 1024 * 1024});
+                if (viewport.width === 1440) desktopPdfPixels = pixels;
+                else assert.ok(pixels.equals(desktopPdfPixels), 'PDF layout must match desktop even after mobile scrolling');
                 const ocr = execFileSync('tesseract', [path.join(output, `pdf-preview-${viewport.width}.png`), 'stdout'], {encoding: 'utf8'});
                 assert.match(ocr, /Laporan Kalkulasi/i, 'Full PDF title must be visible');
                 assert.match(ocr, /Ukuran Fisik Akhir/i, 'Left summary card must be visible');
