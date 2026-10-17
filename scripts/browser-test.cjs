@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
 const {chromium} = require('playwright');
+const {execFileSync} = require('node:child_process');
 
 (async () => {
     const root = path.resolve(__dirname, '..');
@@ -25,6 +26,10 @@ const {chromium} = require('playwright');
             try {
                 await page.goto(`http://127.0.0.1:${server.address().port}/`, {waitUntil: 'networkidle', timeout: 60000});
                 assert.equal(await page.locator('#resDimMeter').innerText(), '3.20 x 1.92 m');
+                await page.locator('#gridPreview img').evaluate(image => image.decode());
+                assert.equal(await page.locator('#gridPreview img').getAttribute('data-module-ratio'), '2');
+                const gridBox = await page.locator('#gridPreview img').boundingBox();
+                assert.ok(Math.abs(gridBox.width / gridBox.height - 3.2 / 1.92) < 0.01, 'Grid keeps physical aspect ratio');
                 assert.equal(await page.evaluate(() => typeof html2pdf), 'function', 'PDF dependency must load');
                 assert.equal(await page.locator('header').evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(12, 42, 77)', 'Tailwind styles must load');
                 await page.locator('#targetWidth').fill('3.3');
@@ -64,16 +69,29 @@ const {chromium} = require('playwright');
                     await page.locator('#copyButton').click();
                     assert.match(await page.evaluate(() => window.copiedText), /3\.120 × 1\.248 px/);
                     assert.match(await page.evaluate(() => window.copiedText), /Penyesuaian Ukuran/);
-                    const downloadPromise = page.waitForEvent('download', {timeout: 60000});
-                    await page.locator('#pdfButton').click();
-                    const download = await downloadPromise;
-                    assert.equal(await download.failure(), null);
-                    const pdfPath = path.join(output, 'specification.pdf');
-                    await download.saveAs(pdfPath);
-                    const bytes = fs.readFileSync(pdfPath);
-                    assert.equal(bytes.subarray(0, 5).toString(), '%PDF-');
-                    assert.ok(bytes.length > 10000, 'PDF must contain rendered results');
                 }
+                const downloadPromise = page.waitForEvent('download', {timeout: 60000});
+                await page.locator('#pdfButton').click();
+                const download = await downloadPromise;
+                assert.equal(await download.failure(), null);
+                const pdfPath = path.join(output, `specification-${viewport.width}.pdf`);
+                await download.saveAs(pdfPath);
+                const bytes = fs.readFileSync(pdfPath);
+                assert.equal(bytes.subarray(0, 5).toString(), '%PDF-');
+                assert.ok(bytes.length > 10000, 'PDF must contain rendered results');
+                const info = execFileSync('pdfinfo', [pdfPath], {encoding: 'utf8'});
+                assert.match(info, /Pages:\s+1\b/, 'Export must be exactly one page');
+                assert.match(info, /Page size:.*A4/, 'Export uses A4');
+                execFileSync('pdftoppm', ['-png', '-scale-to', '1200', '-singlefile', pdfPath,
+                    path.join(output, `pdf-preview-${viewport.width}`)]);
+                await page.waitForFunction(() => !pdfExportInProgress);
+                assert.equal(await page.locator('.pdf-layout').count(), 0, 'Temporary export is cleaned up');
+                await page.locator('#tabGrid').click();
+                await page.locator('#gridCols').fill('30');
+                await page.locator('#gridRows').fill('20');
+                assert.equal(await page.locator('#gridPreview img').count(), 1);
+                assert.match(await page.locator('#gridPreview img').getAttribute('alt'), /30 kolom × 20 baris/);
+                await page.locator('#tabTarget').click();
                 await page.screenshot({path: path.join(output, `${viewport.width}.png`), fullPage: true});
                 assert.deepEqual(errors, [], 'No JavaScript page errors');
                 const width = await page.evaluate(() => document.documentElement.scrollWidth);

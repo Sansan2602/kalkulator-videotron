@@ -120,7 +120,9 @@ test('balanced 3-phase current uses the existing voltage and PF assumptions', ()
 });
 test('large grid preview stays bounded', () => {
     const c = calculator({gridCols: 100, gridRows: 100}, 'grid');
-    c.run(); assert.equal(c.el('gridPreview').children.length, 401);
+    c.run(); assert.equal(c.el('gridPreview').children.length, 1);
+    const svg = decodeURIComponent(c.el('gridPreview').children[0].src.split(',')[1]);
+    assert.match(svg, /viewBox="0 0 32000 16000"/);
 });
 
 for (const pf of [0.5, 1]) {
@@ -139,4 +141,17 @@ test('nearest and ceil allow at least one module and disclose oversize', () => {
 test('total unit limit applies even when each axis is within its limit', () => {
     const c = calculator({gridCols: 1001, gridRows: 1000}, 'grid');
     assert.equal(c.run(), false); assert.match(c.el('validationErrors').textContent, /Batas kalkulator/);
+});
+
+test('rectangular modules retain a 2:1 cell ratio in the static grid', () => {
+    const c = calculator(); c.run();
+    const image = c.el('gridPreview').children[0];
+    assert.equal(image.getAttribute('data-module-ratio'), '2');
+    const svg = decodeURIComponent(image.src.split(',')[1]);
+    assert.match(svg, /pattern id="module-grid" width="320" height="160"/);
+    assert.match(svg, /viewBox="0 0 3200 1920"/);
+});
+test('square cabinets retain square cells', () => {
+    const c = calculator({presetSelect: 'p391_cab'}); c.run();
+    assert.equal(c.el('gridPreview').children[0].getAttribute('data-module-ratio'), '1');
 });

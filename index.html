@@ -51,10 +51,24 @@
         }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
         input[aria-invalid="true"] { border-color: #e11d48; }
+        #gridPreview { display: flex; align-items: center; justify-content: center; width: 100%; padding: 0; border: 0; overflow: visible; }
+        #gridPreview img { display: block; max-width: 100%; height: auto; }
+        .pdf-layout { width: 760px !important; max-width: none !important; margin: 0 auto !important; padding: 16px !important; background: white; color: #1e293b; }
+        .pdf-layout .print-only { display: block !important; margin-bottom: 12px !important; }
+        .pdf-layout .summary-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+        .pdf-layout .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+        .pdf-layout .detail-grid .flex.justify-between { gap: 10px; }
+        .pdf-layout .detail-grid .flex.justify-between > span:last-child { text-align: right; }
+        .pdf-layout > * + * { margin-top: 14px !important; }
+        @page { size: A4 portrait; margin: 10mm; }
         @media print {
             .no-print { display: none !important; }
             .print-only { display: block !important; }
             body { background: white !important; color: black !important; }
+            main { display: block !important; margin: 0 !important; padding: 0 !important; max-width: none !important; }
+            #exportableArea { width: 190mm !important; }
+            #exportableArea .summary-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+            #exportableArea .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
         }
     </style>
 </head>
@@ -259,7 +273,7 @@
 
             <p id="sizeDifference" class="text-sm text-slate-600" aria-live="polite"></p>
             <!-- Key Summary Cards Grid -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="summary-grid grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
                     <span class="text-xs text-slate-500 font-medium">Ukuran Fisik Akhir</span>
                     <div class="mt-2">
@@ -291,7 +305,7 @@
             </div>
 
             <!-- Detailed Specifications Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="detail-grid grid grid-cols-1 md:grid-cols-2 gap-4">
                 
                 <!-- Electrical Power Card -->
                 <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
@@ -360,7 +374,7 @@
                 <!-- Screen Canvas / Frame Mockup -->
                 <div class="bg-slate-900 p-4 rounded-xl flex flex-col items-center justify-center min-h-[220px] overflow-hidden relative">
                     <!-- LED Screen Simulation Grid -->
-                    <div id="gridPreview" class="border-2 border-slate-600 bg-slate-950 p-1 grid gap-1 max-w-full max-h-[300px] overflow-auto custom-scrollbar shadow-2xl transition-all duration-300">
+                    <div id="gridPreview" class="max-w-full">
                         <!-- Grid cells injected via JS -->
                     </div>
 
@@ -630,37 +644,35 @@
                 difference.innerText = 'Ukuran berdasarkan jumlah kolom × baris.';
             }
             // 10. Update Visual Grid Preview
-            renderVisualGrid(cols, rows);
+            renderVisualGrid(cols, rows, modW, modH);
             return true;
         }
 
-        // Render Grid Simulation Cells
-        function renderVisualGrid(cols, rows) {
+        // A single static image preserves physical module proportions and the full grid in PDF.
+        function renderVisualGrid(cols, rows, modW, modH) {
             const container = document.getElementById('gridPreview');
             container.innerHTML = '';
-            
-            // Set CSS Grid Template Columns dynamically
-            container.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
-
-            // Limit preview cells rendering for performance if grid is huge
-            const maxCells = 400;
-            const total = cols * rows;
-            const isOverflow = total > maxCells;
-
-            const renderCount = isOverflow ? maxCells : total;
-
-            for (let i = 0; i < renderCount; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'bg-brand-600/80 border border-brand-400/30 rounded-[2px] h-3 w-3 sm:h-4 sm:w-4 transition hover:bg-emerald-400';
-                container.appendChild(cell);
-            }
-
-            if (isOverflow) {
-                const warning = document.createElement('div');
-                warning.className = 'col-span-full text-[10px] text-amber-400 text-center mt-1';
-                warning.innerText = `*Visual disederhanakan (Total ${total} modul)`;
-                container.appendChild(warning);
-            }
+            const width = cols * modW;
+            const height = rows * modH;
+            const ratio = width / height;
+            const previewWidth = Math.min(720, 300 * ratio);
+            const previewHeight = previewWidth / ratio;
+            const stroke = Math.min(modW, modH) * 0.025;
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${previewWidth}" height="${previewHeight}" viewBox="0 0 ${width} ${height}">
+                <defs><pattern id="module-grid" width="${modW}" height="${modH}" patternUnits="userSpaceOnUse">
+                    <rect width="${modW}" height="${modH}" fill="#0369a1"/>
+                    <path d="M ${modW} 0 H 0 V ${modH}" fill="none" stroke="#7dd3fc" stroke-width="${stroke}"/>
+                </pattern></defs>
+                <rect width="${width}" height="${height}" fill="url(#module-grid)"/>
+                <rect width="${width}" height="${height}" fill="none" stroke="#7dd3fc" stroke-width="${stroke}"/>
+            </svg>`;
+            const image = document.createElement('img');
+            image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+            image.width = previewWidth;
+            image.height = previewHeight;
+            image.alt = `${cols} kolom × ${rows} baris, unit ${modW} × ${modH} mm`;
+            image.setAttribute('data-module-ratio', String(modW / modH));
+            container.appendChild(image);
         }
 
         // Copy Text Summary to Clipboard
@@ -706,23 +718,56 @@
             }, 3000);
         }
 
-        // Export PDF
-        function exportToPDF() {
-            if (!calculate()) return;
+        let pdfExportInProgress = false;
+
+        // Freeze the current results in a fixed desktop layout, then fit the full image to one A4 page.
+        async function exportToPDF() {
+            if (pdfExportInProgress || !calculate()) return;
+            pdfExportInProgress = true;
+            document.getElementById('pdfButton').disabled = true;
             document.getElementById('printDate').innerText = new Date().toLocaleDateString('id-ID');
-            const element = document.getElementById('exportableArea');
-            
-            showToast("Menyiapkan dokumen PDF...");
-
-            const opt = {
-                margin:       0.5,
-                filename:     `Spesifikasi_Videotron_${new Date().toISOString().slice(0,10)}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2 },
-                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-            };
-
-            html2pdf().set(opt).from(element).save();
+            const report = document.getElementById('exportableArea').cloneNode(true);
+            report.removeAttribute('id');
+            report.classList.add('pdf-layout');
+            const host = document.createElement('div');
+            host.style.cssText = 'position:absolute;left:-10000px;top:0;width:800px;pointer-events:none;';
+            host.appendChild(report);
+            document.body.appendChild(host);
+            showToast('Menyiapkan PDF satu halaman...');
+            try {
+                if (document.fonts) await document.fonts.ready;
+                await Promise.all(Array.from(report.querySelectorAll('img'), image => image.decode()));
+                const worker = html2pdf().set({
+                    margin: 0,
+                    image: {type: 'png'},
+                    html2canvas: {scale: 2, windowWidth: 1024, backgroundColor: '#ffffff'},
+                    jsPDF: {unit: 'mm', format: 'a4', orientation: 'portrait'},
+                    pagebreak: {mode: []}
+                }).from(report);
+                const canvas = await worker.toCanvas().get('canvas');
+                const pdf = await worker.toPdf().get('pdf');
+                // Replace automatic pagination with exactly one fitted image, without cropping.
+                while (pdf.getNumberOfPages() > 1) pdf.deletePage(2);
+                pdf.deletePage(1);
+                pdf.addPage('a4', 'portrait');
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+                const margin = 10;
+                const scale = Math.min((pageWidth - margin * 2) / canvas.width,
+                    (pageHeight - margin * 2) / canvas.height);
+                const width = canvas.width * scale;
+                const height = canvas.height * scale;
+                pdf.addImage(canvas.toDataURL('image/png'), 'PNG', (pageWidth - width) / 2, margin, width, height);
+                pdf.save(`Spesifikasi_Videotron_${new Date().toISOString().slice(0, 10)}.pdf`);
+                showToast('PDF satu halaman berhasil dibuat.');
+            } catch (error) {
+                console.error('Ekspor PDF gagal:', error);
+                showToast('PDF gagal dibuat. Periksa koneksi lalu coba lagi.');
+            } finally {
+                host.remove();
+                pdfExportInProgress = false;
+                calculate();
+            }
         }
 
         // Initial trigger on load
