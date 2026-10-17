@@ -17,6 +17,7 @@ const {execFileSync} = require('node:child_process');
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     let browser;
     const results = [];
+    let desktopPdfPixels;
     try {
         browser = await chromium.launch({headless: true});
         for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}]) {
@@ -27,6 +28,13 @@ const {execFileSync} = require('node:child_process');
                 await page.goto(`http://127.0.0.1:${server.address().port}/`, {waitUntil: 'networkidle', timeout: 60000});
                 assert.equal(await page.locator('#resDimMeter').innerText(), '3.20 x 1.92 m');
                 assert.equal(await page.locator('#resMCB').innerText(), 'MCB 1P 25 A');
+                assert.equal(await page.locator('#resFeederCable').innerText(), 'NYY Cu 3 × 6 mm²');
+                await page.locator('#circuitsPerPhase').fill('3');
+                assert.equal(await page.locator('#resBranchCable').innerText(), '3 jalur @ NYY Cu 3 × 2,5 mm²');
+                await page.locator('#circuitsPerPhase').fill('1');
+                await page.locator('#feederLength').fill('');
+                assert.equal(await page.locator('#pdfButton').isDisabled(), true);
+                await page.locator('#feederLength').fill('20');
                 await page.locator('#gridPreview img').evaluate(image => image.decode());
                 assert.equal(await page.locator('#gridPreview img').getAttribute('data-module-ratio'), '2');
                 const gridBox = await page.locator('#gridPreview img').boundingBox();
@@ -87,11 +95,15 @@ const {execFileSync} = require('node:child_process');
                 const info = execFileSync('pdfinfo', [pdfPath], {encoding: 'utf8'});
                 assert.match(info, /Pages:\s+1\b/, 'Export must be exactly one page');
                 assert.match(info, /Page size:.*A4/, 'Export uses A4');
-                execFileSync('pdftoppm', ['-png', '-scale-to', '1200', '-singlefile', pdfPath,
+                execFileSync('pdftoppm', ['-png', '-scale-to', '1800', '-singlefile', pdfPath,
                     path.join(output, `pdf-preview-${viewport.width}`)]);
+                const pixels = execFileSync('pdftoppm', ['-scale-to', '1200', '-singlefile', pdfPath], {maxBuffer: 10 * 1024 * 1024});
+                if (viewport.width === 1440) desktopPdfPixels = pixels;
+                else assert.ok(pixels.equals(desktopPdfPixels), 'PDF layout must match desktop even after mobile scrolling');
                 const ocr = execFileSync('tesseract', [path.join(output, `pdf-preview-${viewport.width}.png`), 'stdout'], {encoding: 'utf8'});
                 assert.match(ocr, /Laporan Kalkulasi/i, 'Full PDF title must be visible');
                 assert.match(ocr, /Ukuran Fisik Akhir/i, 'Left summary card must be visible');
+                assert.match(ocr, /Estimasi Kabel/i, 'Cable recommendations must appear in PDF');
                 await page.waitForFunction(() => !pdfExportInProgress);
                 assert.equal(await page.locator('.pdf-layout').count(), 0, 'Temporary export is cleaned up');
                 await page.locator('#tabGrid').click();

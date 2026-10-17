@@ -56,6 +56,9 @@
         .pdf-layout { width: 760px !important; max-width: none !important; margin: 0 auto !important; padding: 16px !important; background: white; color: #1e293b; }
         .pdf-layout .print-only { display: block !important; margin-bottom: 12px !important; }
         .pdf-layout .summary-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+        .pdf-layout .cable-results { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+        .pdf-layout #gridPreview img { max-height: 200px; width: auto; }
+        .pdf-layout .screen-frame { min-height: 0; padding: 12px; }
         .pdf-layout .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
         .pdf-layout .detail-grid .flex.justify-between { gap: 10px; }
         .pdf-layout .detail-grid .flex.justify-between > span:last-child { text-align: right; }
@@ -251,6 +254,22 @@
                     </div>
                 </div>
 
+
+                <div class="border-t border-slate-100 pt-3 space-y-3">
+                    <h3 class="text-xs font-semibold text-slate-700 uppercase">Kabel Feeder & Jalur ke Layar</h3>
+                    <p class="text-[11px] text-slate-500">Nilai awal adalah contoh. Ubah sesuai rute dan instalasi. Acuan: NYY tembaga/PVC, multicore dalam pipa di dinding (B2).</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label for="feederLength" class="block text-xs text-slate-600 mb-1">Sumber → distribusi (m)</label><input id="feederLength" type="number" value="20" min="0.1" max="1000" step="0.1" oninput="calculate()" class="w-full border rounded-lg p-2 text-sm"></div>
+                        <div><label for="branchLength" class="block text-xs text-slate-600 mb-1">Distribusi → layar, terjauh (m)</label><input id="branchLength" type="number" value="10" min="0.1" max="1000" step="0.1" oninput="calculate()" class="w-full border rounded-lg p-2 text-sm"></div>
+                        <div><label for="circuitsPerPhase" class="block text-xs text-slate-600 mb-1">Jalur keluar per fasa</label><input id="circuitsPerPhase" type="number" value="1" min="1" max="100" step="1" oninput="calculate()" class="w-full border rounded-lg p-2 text-sm"></div>
+                        <div><label for="dropLimit" class="block text-xs text-slate-600 mb-1">Target total jatuh tegangan (%)</label><input id="dropLimit" type="number" value="3" min="0.5" max="5" step="0.1" oninput="calculate()" class="w-full border rounded-lg p-2 text-sm"></div>
+                        <div><label for="cableTemperature" class="block text-xs text-slate-600 mb-1">Suhu lingkungan kabel (°C)</label><select id="cableTemperature" onchange="calculate()" class="w-full border rounded-lg p-2 text-sm"><option value="30">30°C</option><option value="35">35°C</option><option value="40" selected>40°C</option><option value="45">45°C</option><option value="50">50°C</option></select></div>
+                        <div><label for="sourceProtection" class="block text-xs text-slate-600 mb-1">Proteksi pangkal feeder (A)</label><select id="sourceProtection" onchange="calculate()" class="w-full border rounded-lg p-2 text-sm"><option value="auto">Otomatis dari beban</option><option value="2">2 A</option><option value="4">4 A</option><option value="6">6 A</option><option value="10">10 A</option><option value="16">16 A</option><option value="20">20 A</option><option value="25">25 A</option><option value="32">32 A</option><option value="40">40 A</option><option value="50">50 A</option><option value="63">63 A</option><option value="80">80 A</option><option value="100">100 A</option><option value="125">125 A</option><option value="160">160 A</option><option value="200">200 A</option><option value="250">250 A</option></select></div>
+                        <div><label for="feederFactor" class="block text-xs text-slate-600 mb-1">Faktor koreksi lain, feeder</label><input id="feederFactor" type="number" value="1" min="0.1" max="1" step="0.01" oninput="calculate()" class="w-full border rounded-lg p-2 text-sm"></div>
+                        <div><label for="branchFactor" class="block text-xs text-slate-600 mb-1">Faktor koreksi lain, jalur layar</label><input id="branchFactor" type="number" value="1" min="0.1" max="1" step="0.01" oninput="calculate()" class="w-full border rounded-lg p-2 text-sm"></div>
+                    </div>
+                    <p class="text-[11px] text-slate-500">Beban diasumsikan merata. Faktor koreksi lain mencakup pengelompokan/rute; 1 hanya untuk kondisi tanpa penurunan tambahan. Target drop adalah pilihan desain, dibagi 50:50 untuk kedua jalur. Proteksi feeder harus berada di panel sumber.</p>
+                </div>
             </div>
 
             <div id="validationErrors" role="alert" class="hidden bg-rose-50 border border-rose-200 text-rose-800 text-sm p-3 rounded-lg" hidden></div>
@@ -363,6 +382,18 @@
 
             </div>
 
+
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-2 cable-card">
+                <h3 class="font-bold text-sm text-slate-800">Estimasi Kabel Feeder & Distribusi</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 cable-results text-xs">
+                    <div><h4 class="font-semibold mb-1">Panel sumber → panel distribusi</h4><p id="resFeederCable" class="font-bold text-brand-700"></p><p id="resFeederDetail" class="text-slate-600 mt-1"></p></div>
+                    <div><h4 class="font-semibold mb-1">Panel distribusi → videotron</h4><p id="resBranchCable" class="font-bold text-brand-700"></p><p id="resBranchDetail" class="text-slate-600 mt-1"></p></div>
+                </div>
+                <p id="resCableStatus" class="text-xs font-semibold"></p>
+                <p id="resCableAssumptions" class="text-[11px] text-slate-500"></p>
+                <p class="text-[11px] text-slate-500">Estimasi awal: cek rute, beban tiap jalur, arus netral/harmonik PSU, kemampuan hubung singkat dan koordinasi proteksi. Netral/PE tidak dikurangi. Bukan untuk kabel tertanam, dinding berinsulasi termal atau kabel fleksibel.</p>
+            </div>
+
             <!-- Visual Grid Simulator Container -->
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-2">
@@ -374,7 +405,7 @@
                 </div>
 
                 <!-- Screen Canvas / Frame Mockup -->
-                <div class="bg-slate-900 p-4 rounded-xl flex flex-col items-center justify-center min-h-[220px] overflow-hidden relative">
+                <div class="screen-frame bg-slate-900 p-4 rounded-xl flex flex-col items-center justify-center min-h-[220px] overflow-hidden relative">
                     <!-- LED Screen Simulation Grid -->
                     <div id="gridPreview" class="max-w-full">
                         <!-- Grid cells injected via JS -->
@@ -459,7 +490,7 @@
         const RESULT_IDS = ['resDimMeter', 'resLuas', 'resTotalModules', 'resGridFormat',
             'resPixels', 'resMegaPixels', 'resAspectRatio', 'resRatioMatch', 'resPowerMax',
             'resPowerAvg', 'resAmpere', 'resMCB', 'resMCBDetail', 'resControllerPorts', 'resDistMin',
-            'resDistOptimal', 'visualWidthTxt', 'visualHeightTxt', 'resGridRatioBadge'];
+            'resDistOptimal', 'resFeederCable', 'resFeederDetail', 'resBranchCable', 'resBranchDetail', 'resCableStatus', 'resCableAssumptions', 'visualWidthTxt', 'visualHeightTxt', 'resGridRatioBadge'];
 
         function showValidation(errors) {
             const box = document.getElementById('validationErrors');
@@ -512,6 +543,65 @@
             return ratings ? ratings.find(rating => rating >= requiredCurrent) ?? null : null;
         }
 
+        // Cu/PVC 70°C, B2, three loaded conductors; conservative also for 2-loaded branches.
+        // Schneider EIG Fig. G20 (IEC 60364-5-52 B.52.4); capacities at 30°C before corrections.
+        const CABLE_TABLE = [[2.5,20],[4,27],[6,34],[10,46],[16,62],[25,80],[35,99],[50,118],[70,149],[95,179]];
+        const PVC_TEMPERATURE_FACTORS = {30:1, 35:0.94, 40:0.87, 45:0.79, 50:0.71};
+
+        function cableDropPercent(current, length, section, phase, pf) {
+            const voltage = phase === 3 ? 380 : 220;
+            const multiplier = phase === 3 ? Math.sqrt(3) : 2;
+            const impedance = (23.7 / section) * pf + 0.08 * Math.sqrt(1 - pf * pf);
+            return multiplier * current * impedance * length / 1000 / voltage * 100;
+        }
+
+        function selectCable(current, breaker, length, phase, pf, factor, dropBudget) {
+            if (![current, breaker, length, factor, dropBudget].every(x => Number.isFinite(x) && x > 0)
+                || breaker < current || factor > 1 || ![1,3].includes(phase) || pf < 0.5 || pf > 1) return null;
+            for (const [section, capacity] of CABLE_TABLE) {
+                const corrected = capacity * factor;
+                const drop = cableDropPercent(current, length, section, phase, pf);
+                if (corrected >= breaker && drop <= dropBudget) return {section, capacity: corrected, drop};
+            }
+            return null;
+        }
+
+        function updateCableResults(current, totalPower, phase, pf, config, feederBreaker) {
+            const f = n => n.toLocaleString('id-ID', {maximumFractionDigits: 2});
+            const count = config.groups * phase;
+            const branchVoltage = phase === 3 ? 380 / Math.sqrt(3) : 220;
+            const branchCurrent = totalPower / count / branchVoltage / pf;
+            const branchBreaker = selectMCBRating(branchCurrent * 1.25, 1);
+            const correction = PVC_TEMPERATURE_FACTORS[config.temperature];
+            const feeder = selectCable(current, feederBreaker, config.feederLength, phase, pf,
+                correction * config.feederFactor, config.limit / 2);
+            // Branches are L-N. 3-phase line-to-neutral voltage is derived from 380 V.
+            // Convert the drop budget so the 220 V helper gives the same absolute drop allowance.
+            const branch = selectCable(branchCurrent, branchBreaker, config.branchLength, 1, pf,
+                correction * config.branchFactor, config.limit / 2 * branchVoltage / 220);
+            const branchDrop = branch ? branch.drop * 220 / branchVoltage : null;
+            document.getElementById('resFeederCable').innerText = feeder
+                ? `NYY Cu ${phase === 3 ? 5 : 3} × ${f(feeder.section)} mm²`
+                : 'Belum dapat direkomendasikan';
+            document.getElementById('resFeederDetail').innerText = feeder
+                ? `${f(config.feederLength)} m; ${phase === 3 ? 'R/S/T/N/PE' : 'L/N/PE'}; proteksi di sumber ${f(feederBreaker)} A; KHA terkoreksi ${f(feeder.capacity)} A; drop ${f(feeder.drop)}%.`
+                : feederBreaker === null ? 'Tentukan rating MCCB/MCB di panel sumber pada input proteksi feeder.'
+                : feederBreaker < current ? 'Proteksi di sumber lebih kecil dari arus beban; koreksi desain instalasi.'
+                : 'Tidak ada ukuran 2,5–95 mm² yang memenuhi KHA dan budget drop; evaluasi rute/proteksi.';
+            document.getElementById('resBranchCable').innerText = branch
+                ? `${count} jalur @ NYY Cu 3 × ${f(branch.section)} mm²`
+                : 'Belum dapat direkomendasikan';
+            document.getElementById('resBranchDetail').innerText = branch
+                ? `${config.groups} jalur/fasa, masing-masing L/N/PE; terjauh ${f(config.branchLength)} m; ${f(branchCurrent)} A/jalur; MCB 1P ${branchBreaker} A/jalur di distribusi; KHA ${f(branch.capacity)} A; drop ${f(branchDrop)}%.`
+                : 'Bagi beban ke lebih banyak jalur atau evaluasi proteksi, rute dan ukuran di luar tabel.';
+            const status = document.getElementById('resCableStatus');
+            status.innerText = feeder && branch
+                ? `Total drop estimasi ${f(feeder.drop + branchDrop)}% ≤ target ${f(config.limit)}%.`
+                : 'Perlu evaluasi: salah satu jalur belum memenuhi kriteria perhitungan.';
+            status.className = `text-xs font-semibold ${feeder && branch ? 'text-emerald-700' : 'text-rose-700'}`;
+            document.getElementById('resCableAssumptions').innerText = `Asumsi: B2, Cu/PVC 70°C, lingkungan ${config.temperature}°C; faktor lain feeder ${f(config.feederFactor)}, keluar ${f(config.branchFactor)}; beban terbagi merata${phase === 3 ? ', 3 fasa seimbang; harmonik/netral perlu verifikasi' : ''}.`;
+        }
+
         // Main Calculation Logic Engine
         function calculate() {
             const errors = [];
@@ -535,6 +625,20 @@
             const phase = Number(document.getElementById('phaseType').value);
             if (![1, 3].includes(phase)) errors.push('Pilih sistem listrik 1 atau 3 fasa.');
             const pf = readPositive('powerFactor', 'Power factor', errors, {min: 0.5, max: 1});
+            const cableConfig = {
+                feederLength: readPositive('feederLength', 'Panjang feeder', errors, {min: 0.1, max: 1000}),
+                branchLength: readPositive('branchLength', 'Panjang jalur layar', errors, {min: 0.1, max: 1000}),
+                groups: readPositive('circuitsPerPhase', 'Jalur per fasa', errors, {integer: true, max: 100}),
+                limit: readPositive('dropLimit', 'Target drop total', errors, {min: 0.5, max: 5}),
+                feederFactor: readPositive('feederFactor', 'Faktor koreksi feeder', errors, {min: 0.1, max: 1}),
+                branchFactor: readPositive('branchFactor', 'Faktor koreksi keluar', errors, {min: 0.1, max: 1}),
+                temperature: Number(document.getElementById('cableTemperature').value)
+            };
+            if (!Object.hasOwn(PVC_TEMPERATURE_FACTORS, cableConfig.temperature)) errors.push('Pilih suhu kabel yang tersedia.');
+            const protectionInput = document.getElementById('sourceProtection').value;
+            const sourceProtection = protectionInput === 'auto' ? null : Number(protectionInput);
+            const feederRatings = [2,4,6,10,16,20,25,32,40,50,63,80,100,125,160,200,250];
+            if (protectionInput !== 'auto' && !feederRatings.includes(sourceProtection)) errors.push('Pilih proteksi feeder yang tersedia.');
             let cols, rows, targetW, targetH;
             if (currentInputMode === 'target') {
                 targetW = readPositive('targetWidth', 'Target lebar', errors);
@@ -613,6 +717,9 @@
 
             const designCurrent = ampere * 1.25;
             const recommendedMCB = selectMCBRating(designCurrent, phase);
+
+            updateCableResults(ampere, totalMaxPowerWatt, phase, pf, cableConfig,
+                protectionInput === 'auto' ? recommendedMCB : sourceProtection);
 
             // 7. Controller Port Calculations (Standard Controller capacity ~650,000 px / LAN Port)
             const portCapacity = 650000;
@@ -718,6 +825,10 @@
                          ` Arus Listrik: ${amp}\n` +
                          ` Proteksi: ${document.getElementById('resMCB').innerText}\n` +
                          ` Dasar Seleksi: ${document.getElementById('resMCBDetail').innerText}\n` +
+                         ` Feeder: ${document.getElementById('resFeederCable').innerText} — ${document.getElementById('resFeederDetail').innerText}\n` +
+                         ` Kabel Layar: ${document.getElementById('resBranchCable').innerText} — ${document.getElementById('resBranchDetail').innerText}\n` +
+                         ` Jatuh Tegangan: ${document.getElementById('resCableStatus').innerText}\n` +
+                         ` Asumsi Kabel: ${document.getElementById('resCableAssumptions').innerText}\n` +
                          ` Controller: ${ports}\n` +
                          `=======================================`;
 
@@ -748,6 +859,8 @@
         async function exportToPDF() {
             if (pdfExportInProgress || !calculate()) return;
             pdfExportInProgress = true;
+            const originalScroll = {x: window.scrollX, y: window.scrollY};
+            window.scrollTo(0, 0);
             document.getElementById('pdfButton').disabled = true;
             document.getElementById('printDate').innerText = new Date().toLocaleDateString('id-ID');
             const report = document.getElementById('exportableArea').cloneNode(true);
@@ -759,17 +872,21 @@
             document.body.appendChild(host);
             showToast('Menyiapkan PDF satu halaman...');
             try {
+                await new Promise(resolve => requestAnimationFrame(resolve));
                 if (document.fonts) await document.fonts.ready;
                 await Promise.all(Array.from(report.querySelectorAll('img'), image => image.decode()));
                 const worker = html2pdf().set({
                     margin: 0,
                     image: {type: 'png'},
-                    html2canvas: {scale: 2, windowWidth: 1024, backgroundColor: '#ffffff'},
+                    html2canvas: {scale: 2, windowWidth: 1024, scrollX: 0, scrollY: 0, backgroundColor: '#ffffff'},
                     jsPDF: {unit: 'mm', format: 'a4', orientation: 'portrait'},
                     pagebreak: {mode: []}
                 }).from(report);
                 // Keep the capture origin stable when html2canvas uses its fixed desktop viewport.
                 const container = await worker.toContainer().get('container');
+                container.style.position = 'absolute';
+                container.style.top = '0';
+                container.parentElement.style.overflow = 'visible';
                 container.style.left = '0';
                 container.style.right = 'auto';
                 container.style.margin = '0';
@@ -794,6 +911,7 @@
                 showToast('PDF gagal dibuat. Periksa koneksi lalu coba lagi.');
             } finally {
                 host.remove();
+                window.scrollTo(originalScroll.x, originalScroll.y);
                 pdfExportInProgress = false;
                 calculate();
             }

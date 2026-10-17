@@ -55,3 +55,23 @@ Daftar nominal mengacu pada rating produk retail, bukan jaminan stok toko atau p
 - [Katalog resmi Easy9: rating 6–63 A, 1P/3P](https://download.schneider-electric.com/files?p_Doc_Ref=Catalogue_Easy9&p_File_Name=Easy+9+Catalogue.pdf&p_enDocType=Catalog)
 
 Contoh: perhitungan bawaan memilih MCB 1P 25 A; P1.53 4,80 × 1,92 m memilih MCB 1P 40 A. Pemilihan kurva dan kapasitas pemutusan tidak ditetapkan otomatis dari rating nominal saja.
+
+## Kabel sumber → distribusi → videotron
+
+Input panjang satu arah feeder dan jalur keluar terjauh, jumlah jalur keluar per fasa, suhu kabel, faktor koreksi tambahan masing-masing jalur, proteksi di pangkal feeder, serta target total jatuh tegangan. Default 20 m / 10 m / 40°C / faktor 1 adalah contoh, bukan hasil survei. Semua rekomendasi adalah estimasi awal dengan pembagian beban merata.
+
+Acuan kabel NYY Cu/PVC 70°C multicore metode B2 (dalam pipa di dinding, bukan dinding berinsulasi termal). Tabel KHA tiga konduktor berbeban juga dipakai secara konservatif untuk cabang satu fasa. Ukuran 2,5–95 mm² dipilih dengan syarat KHA terkoreksi ≥ nominal proteksi ≥ arus beban. Faktor suhu dikalikan faktor tambahan pengguna untuk pengelompokan/rute. Ini bukan tabel untuk kabel tertanam atau fleksibel.
+
+Feeder satu fasa: 3 inti L/N/PE. Feeder tiga fasa: 5 inti R/S/T/N/PE. Netral dan PE tetap berpenampang penuh. Setiap jalur keluar adalah sirkuit satu fasa 3 inti L/N/PE dengan MCB masing-masing di panel distribusi. Jumlah total jalur = jalur/fasa × jumlah fasa. Beban satu layar dibagi merata; verifikasi fase/jalur terberat dan arus netral/harmonik PSU sebelum instalasi. Belum termasuk beban lain di panel sumber.
+
+Proteksi feeder harus di pangkal jalur, yaitu panel sumber. Input otomatis menggunakan rekomendasi MCB dari beban dan mengasumsikan perangkat ini dipasang di sumber; pilih rating proteksi aktual bila sudah ada. Proteksi yang lebih kecil dari arus beban, di luar rentang MCB otomatis, atau kebutuhan kabel di atas tabel tidak menghasilkan rekomendasi palsu.
+
+Perkiraan drop memakai R=23,7/S Ω/km (pendekatan konservatif untuk PVC), X=0,08 Ω/km dan PF. Pengali 2 untuk satu fasa, √3 untuk tiga fasa. Target desain total dibagi sama untuk feeder dan cabang; nilai drop keduanya dijumlahkan pada tegangan sebanding. Cabang tiga fasa memakai tegangan L-N 380/√3 V, bukan 380 V. Target 3% adalah pilihan awal desain, bukan klaim batas regulasi. Drop sebelum panel sumber tidak termasuk.
+
+Rujukan primer:
+
+- [Schneider Electrical Installation Guide: metode, KHA B2, faktor suhu/pengelompokan dan harmonik](https://www.electrical-installation.org/enwiki/General_method_for_cable_sizing)
+- [Schneider EIG: rumus jatuh tegangan dan penjumlahan feeder + cabang](https://www.electrical-installation.org/enwiki/Calculation_of_voltage_drop_in_steady_load_conditions)
+- [Schneider EIG: koordinasi proteksi dan KHA](https://www.electrical-installation.org/enwiki/Practical_values_for_a_protective_scheme)
+
+Uji browser juga memeriksa rekomendasi kabel dan ekspor PDF A4 satu halaman. Pengujian tidak memverifikasi kondisi lapangan, ketahanan hubung singkat, harmonik/netral, atau koordinasi lengkap seluruh perangkat proteksi.
