@@ -1,0 +1,36 @@
+name: Custom domain diagnostics
+on:
+  push:
+    branches: [setup/teknisi-online-domain]
+permissions:
+  contents: read
+  pages: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Inspect public DNS and Pages configuration
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import urllib.request, urllib.parse, json, os
+          for name, kind in [('teknisi.online','A'),('teknisi.online','AAAA'),('teknisi.online','NS'),('teknisi.online','CAA'),('www.teknisi.online','CNAME')]:
+              url='https://dns.google/resolve?'+urllib.parse.urlencode({'name':name,'type':kind})
+              try:
+                  result=json.load(urllib.request.urlopen(url,timeout=15))
+                  print(json.dumps({'name':name,'type':kind,'status':result.get('Status'),'answer':result.get('Answer',[]),'authority':result.get('Authority',[])},ensure_ascii=False))
+              except Exception as e: print(name,kind,type(e).__name__,str(e))
+          req=urllib.request.Request('https://api.github.com/repos/Sansan2602/kalkulator-videotron/pages',headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+          try:
+              result=json.load(urllib.request.urlopen(req,timeout=15))
+              print(json.dumps({'pages':{k:result.get(k) for k in ['status','cname','html_url','build_type','source','https_enforced','https_certificate']}}))
+          except Exception as e: print('Pages configuration:',type(e).__name__,str(e))
+          for url in ['http://teknisi.online/','https://teknisi.online/']:
+              try:
+                  response=urllib.request.urlopen(url,timeout=20)
+                  text=response.read(150000).decode('utf-8',errors='replace')
+                  print(json.dumps({'url':url,'final_url':response.url,'status':response.status,'server':response.headers.get('server'),'calculator': 'Kalkulator Videotron' in text,'title':text.split('<title>')[1].split('</title>')[0] if '<title>' in text else None}))
+              except Exception as e: print(url,type(e).__name__,str(e))
+          PY
